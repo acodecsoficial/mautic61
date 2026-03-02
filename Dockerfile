@@ -6,13 +6,14 @@ RUN apt-get update && apt-get install -y \
     git \
     unzip \
     zip \
+    curl \
     cron \
     default-mysql-client \
     libicu-dev \
-    libzip-dev \
     libpng-dev \
     libjpeg62-turbo-dev \
     libfreetype6-dev \
+    libzip-dev \
     libonig-dev \
     libxml2-dev \
     libcurl4-openssl-dev \
@@ -23,19 +24,19 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
     && docker-php-ext-install \
+        intl \
         pdo \
         pdo_mysql \
         mysqli \
-        intl \
         zip \
         gd \
         mbstring \
         xml \
-        xsl \
-        opcache \
         imap \
         bcmath \
         sockets \
+        xsl \
+        opcache \
     && a2enmod rewrite \
     && sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
     && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf \

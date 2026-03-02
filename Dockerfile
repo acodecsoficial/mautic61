@@ -59,8 +59,11 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 COPY . /var/www/html
 
-RUN chmod +x /var/www/html/bin/console \
-    && COMPOSER_ALLOW_SUPERUSER=1 composer install --prefer-dist --no-dev --optimize-autoloader --no-interaction --no-scripts
+RUN rm -f composer.lock \
+    && rm -rf vendor \
+    && composer clear-cache \
+    && chmod +x /var/www/html/bin/console \
+    && COMPOSER_ALLOW_SUPERUSER=1 composer update --with-all-dependencies --no-interaction --no-scripts
 
 RUN chown -R www-data:www-data /var/www/html \
     && mkdir -p /var/www/html/var /var/www/html/media \

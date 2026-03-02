@@ -1,4 +1,4 @@
-FROM php:8.2-apache
+FROM php:8.2-apache-bookworm
 
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/docroot
 
@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y \
     libcurl4-openssl-dev \
     libssl-dev \
     libxslt1-dev \
-    libc-client-dev \
+    libc-client2007e-dev \
     libkrb5-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
@@ -43,12 +43,12 @@ RUN apt-get update && apt-get install -y \
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
-
 COPY . /var/www/html
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 775 /var/www/html/var /var/www/html/docroot/media || true
+    && mkdir -p /var/www/html/var /var/www/html/docroot/media \
+    && chmod -R 775 /var/www/html/var /var/www/html/docroot/media
 
 EXPOSE 80

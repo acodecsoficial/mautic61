@@ -46,6 +46,7 @@ RUN apt-get update && apt-get install -y \
 AllowOverride All\n\
 Require all granted\n\
 Options FollowSymLinks\n\
+DirectoryIndex index.php index.html\n\
 </Directory>\n' > /etc/apache2/conf-available/mautic.conf \
     && a2enconf mautic \
     && apt-get clean \
@@ -61,6 +62,8 @@ RUN chmod +x /var/www/html/bin/console \
 
 RUN chown -R www-data:www-data /var/www/html \
     && mkdir -p /var/www/html/var /var/www/html/docroot/media \
+    && find /var/www/html -type d -exec chmod 755 {} \; \
+    && find /var/www/html -type f -exec chmod 644 {} \; \
     && chmod -R 775 /var/www/html/var /var/www/html/docroot/media
 
 EXPOSE 80

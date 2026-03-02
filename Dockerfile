@@ -6,6 +6,8 @@ RUN apt-get update && apt-get install -y \
     git \
     unzip \
     zip \
+    cron \
+    default-mysql-client \
     libicu-dev \
     libzip-dev \
     libpng-dev \
@@ -16,9 +18,10 @@ RUN apt-get update && apt-get install -y \
     libcurl4-openssl-dev \
     libssl-dev \
     libxslt1-dev \
-    cron \
-    default-mysql-client \
+    libc-client-dev \
+    libkrb5-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
     && docker-php-ext-install \
         pdo \
         pdo_mysql \
@@ -30,13 +33,17 @@ RUN apt-get update && apt-get install -y \
         xml \
         xsl \
         opcache \
+        imap \
     && a2enmod rewrite \
     && sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
-    && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+    && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
+
 COPY . /var/www/html
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction

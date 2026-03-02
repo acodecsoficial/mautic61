@@ -56,6 +56,7 @@ class FormSubscriber implements EventSubscriberInterface
             'formType'           => FormSubmitActionDownloadFileType::class,
             'formTypeCleanMasks' => ['message' => 'html'],
             'eventName'          => FormEvents::ON_EXECUTE_SUBMIT_ACTION,
+            'allowCampaignForm'  => true,
             'template'           => '@MauticAsset/Action/asset.html.twig',
         ]);
     }

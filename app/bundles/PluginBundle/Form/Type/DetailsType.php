@@ -6,7 +6,6 @@ use Mautic\CoreBundle\Form\Type\FormButtonsType;
 use Mautic\CoreBundle\Form\Type\StandAloneButtonType;
 use Mautic\CoreBundle\Form\Type\YesNoButtonGroupType;
 use Mautic\PluginBundle\Entity\Integration;
-use Mautic\PluginBundle\Form\Constraint\CanPublish;
 use Mautic\PluginBundle\Integration\AbstractIntegration;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
@@ -23,11 +22,7 @@ class DetailsType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        $builder->add('isPublished', YesNoButtonGroupType::class, [
-            'constraints' => [
-                new CanPublish($options['integration'] ?? ''),
-            ],
-        ]);
+        $builder->add('isPublished', YesNoButtonGroupType::class);
 
         /** @var AbstractIntegration $integrationObject */
         $integrationObject = $options['integration_object'];

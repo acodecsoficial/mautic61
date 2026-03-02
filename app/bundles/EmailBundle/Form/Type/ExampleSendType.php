@@ -58,7 +58,6 @@ class ExampleSendType extends AbstractType
                             'mautic.core.form.nomatches'
                         ),
                     ],
-                    'required' => false,
                 ]
             );
 

@@ -23,7 +23,7 @@ class TagEntityModelTransformer implements DataTransformerInterface
     ) {
     }
 
-    public function reverseTransform(mixed $entity): mixed
+    public function reverseTransform($entity)
     {
         if (!$this->isArray) {
             if (is_null($entity) || !is_object($entity)) {
@@ -48,7 +48,7 @@ class TagEntityModelTransformer implements DataTransformerInterface
     /**
      * @throws TransformationFailedException if object is not found
      */
-    public function transform(mixed $id): mixed
+    public function transform($id)
     {
         if (!$this->isArray) {
             if (!$id) {

@@ -4,7 +4,6 @@ namespace Mautic\CoreBundle\Helper\Chart;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Query\QueryBuilder;
-use Mautic\CoreBundle\Doctrine\GeneratedColumn\GeneratedColumn;
 use Mautic\CoreBundle\Doctrine\Provider\GeneratedColumnsProviderInterface;
 use Mautic\CoreBundle\Helper\DateTimeHelper;
 
@@ -133,12 +132,6 @@ class ChartQuery extends AbstractChart
         }
 
         if ($dateColumn) {
-            $generatedColumn = $this->getGeneratedColumnForDateColumn($query, (string) $dateColumn, (string) $tablePrefix);
-
-            if ($generatedColumn) {
-                $dateColumn = $generatedColumn->getFilterDateColumn() ?: $dateColumn;
-            }
-
             if ($this->dateFrom && $this->dateTo) {
                 // Between is faster so if we know both dates...
                 /** @var \DateTime $dateFrom */
@@ -225,16 +218,17 @@ class ChartQuery extends AbstractChart
     /**
      * Modify database query for fetching the line time chart data.
      *
-     * @param string      $column       name
-     * @param string      $tablePrefix
-     * @param string      $countColumn
-     * @param bool|string $isEnumerable true = COUNT, string sum = SUM
+     * @param QueryBuilder $query
+     * @param string       $column       name
+     * @param string       $tablePrefix
+     * @param string       $countColumn
+     * @param bool|string  $isEnumerable true = COUNT, string sum = SUM
      */
-    public function modifyTimeDataQuery(QueryBuilder $query, $column, $tablePrefix = 't', $countColumn = '*', $isEnumerable = true, bool $useSqlOrder = true): void
+    public function modifyTimeDataQuery($query, $column, $tablePrefix = 't', $countColumn = '*', $isEnumerable = true, bool $useSqlOrder = true): void
     {
         // Convert time units to the right form for current database platform
         $limit         = $this->countAmountFromDateRange();
-        $dateConstruct = $this->getDateConstruct($query, $tablePrefix, $column);
+        $dateConstruct = $this->getDateConstruct($tablePrefix, $column);
 
         if (true === $isEnumerable) {
             $count = 'COUNT('.$countColumn.') AS count';
@@ -572,12 +566,18 @@ class ChartQuery extends AbstractChart
      * @param string $tablePrefix
      * @param string $column
      */
-    private function getDateConstruct(QueryBuilder $query, $tablePrefix, $column): string
+    private function getDateConstruct($tablePrefix, $column): string
     {
-        $generatedColumn = $this->getGeneratedColumnForDateColumn($query, (string) $column, (string) $tablePrefix);
+        if ($this->generatedColumnProvider) {
+            $generatedColumns = $this->generatedColumnProvider->getGeneratedColumns();
 
-        if ($generatedColumn) {
-            return $tablePrefix.'.'.$generatedColumn->getColumnName();
+            try {
+                $generatedColumn = $generatedColumns->getForOriginalDateColumnAndUnit($column, $this->unit);
+
+                return $tablePrefix.'.'.$generatedColumn->getColumnName();
+            } catch (\UnexpectedValueException) {
+                // Alright. Use the original column then.
+            }
         }
 
         $dbUnit                = $this->translateTimeUnit($this->unit);
@@ -586,46 +586,5 @@ class ChartQuery extends AbstractChart
         $columnName            = "CONVERT_TZ($columnName, '+00:00', '{$defaultTimezoneOffset}')";
 
         return 'DATE_FORMAT('.$columnName.', \''.$dbUnit.'\')';
-    }
-
-    private function getGeneratedColumnForDateColumn(QueryBuilder $query, string $dateColumn, string $tablePrefix): ?GeneratedColumn
-    {
-        if (!$this->generatedColumnProvider) {
-            return null;
-        }
-
-        $tableName = $this->getTableNameByAlias($query, $tablePrefix);
-
-        try {
-            return $this->generatedColumnProvider->getGeneratedColumns()
-                ->getGeneratedColumnForDateColumn($tableName, $dateColumn, $this->unit);
-        } catch (\UnexpectedValueException) {
-            return null;
-        }
-    }
-
-    private function getTableNameByAlias(QueryBuilder $query, string $alias): string
-    {
-        foreach ($query->getQueryPart('from') as $from) {
-            $fromAlias = $from['alias'] ?? null;
-            $fromTable = $from['table'] ?? null;
-
-            if ($alias === $fromAlias && null !== $fromTable) {
-                return $fromTable;
-            }
-        }
-
-        foreach ($query->getQueryPart('join') as $joins) {
-            foreach ($joins as $join) {
-                $joinAlias = $join['joinAlias'] ?? null;
-                $joinTable = $join['joinTable'] ?? null;
-
-                if ($alias === $joinAlias && null !== $joinTable) {
-                    return $joinTable;
-                }
-            }
-        }
-
-        throw new \LogicException(sprintf('Cannot find a table name for the alias "%s".', $alias));
     }
 }

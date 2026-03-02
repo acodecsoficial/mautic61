@@ -21,7 +21,7 @@ class SecondsConversionTransformer implements DataTransformerInterface
      *
      * @return string
      */
-    public function reverseTransform(mixed $value): mixed
+    public function reverseTransform($value)
     {
         $value = (int) $value;
 
@@ -43,7 +43,7 @@ class SecondsConversionTransformer implements DataTransformerInterface
      *
      * @return string
      */
-    public function transform(mixed $value): mixed
+    public function transform($value)
     {
         $value = (int) $value;
 

@@ -16,9 +16,6 @@ use Mautic\CampaignBundle\Executioner\ContactFinder\Limiter\ContactLimiter;
 use Mautic\CampaignBundle\Form\Type\CampaignType;
 use Mautic\CampaignBundle\Helper\ChannelExtractor;
 use Mautic\CampaignBundle\Membership\MembershipBuilder;
-use Mautic\CampaignBundle\Model\Exceptions\CampaignAlreadyUnpublishedException;
-use Mautic\CampaignBundle\Model\Exceptions\CampaignVersionMismatchedException;
-use Mautic\CoreBundle\Doctrine\Provider\GeneratedColumnsProviderInterface;
 use Mautic\CoreBundle\Helper\Chart\ChartQuery;
 use Mautic\CoreBundle\Helper\Chart\LineChart;
 use Mautic\CoreBundle\Helper\CoreParametersHelper;
@@ -52,7 +49,6 @@ class CampaignModel extends CommonFormModel implements GlobalSearchInterface
         private EventCollector $eventCollector,
         private MembershipBuilder $membershipBuilder,
         private ContactTracker $contactTracker,
-        private GeneratedColumnsProviderInterface $generatedColumnsProvider,
         EntityManager $em,
         CorePermissions $security,
         EventDispatcherInterface $dispatcher,
@@ -176,7 +172,7 @@ class CampaignModel extends CommonFormModel implements GlobalSearchInterface
     /**
      * @throws MethodNotAllowedHttpException
      */
-    protected function dispatchEvent($action, &$entity, $isNew = false, ?\Symfony\Contracts\EventDispatcher\Event $event = null): ?\Symfony\Contracts\EventDispatcher\Event
+    protected function dispatchEvent($action, &$entity, $isNew = false, \Symfony\Contracts\EventDispatcher\Event $event = null): ?\Symfony\Contracts\EventDispatcher\Event
     {
         if ($entity instanceof CampaignLead) {
             return null;
@@ -232,12 +228,7 @@ class CampaignModel extends CommonFormModel implements GlobalSearchInterface
                     $event->setTempId($v);
                 }
 
-                if (in_array($f, ['id', 'parent', 'campaign'])) {
-                    continue;
-                }
-
-                if ('redirectEvent' === $f) {
-                    $this->setRedirectEvent($v, $event);
+                if (in_array($f, ['id', 'parent'])) {
                     continue;
                 }
 
@@ -253,21 +244,18 @@ class CampaignModel extends CommonFormModel implements GlobalSearchInterface
             $events[$properties['id']] = $event;
         }
 
-        // Process deleted events for the entity
-        foreach ($deletedEvents as $deleteInfo) {
-            $eventId = $deleteInfo['id'];
-
-            if (isset($existingEvents[$eventId])) {
+        foreach ($deletedEvents as $deleteMe) {
+            if (isset($existingEvents[$deleteMe])) {
                 // Remove child from parent
-                $parent = $existingEvents[$eventId]->getParent();
+                $parent = $existingEvents[$deleteMe]->getParent();
                 if ($parent) {
-                    $parent->removeChild($existingEvents[$eventId]);
-                    $existingEvents[$eventId]->removeParent();
+                    $parent->removeChild($existingEvents[$deleteMe]);
+                    $existingEvents[$deleteMe]->removeParent();
                 }
 
-                $entity->removeEvent($existingEvents[$eventId]);
+                $entity->removeEvent($existingEvents[$deleteMe]);
 
-                unset($events[$eventId]);
+                unset($events[$deleteMe]);
             }
         }
 
@@ -352,8 +340,6 @@ class CampaignModel extends CommonFormModel implements GlobalSearchInterface
         // Persist events if campaign is being edited
         if ($entity->getId()) {
             $this->getEventRepository()->saveEntities($events);
-
-            $this->handleDeletedEventsWithRedirect($deletedEvents);
         }
 
         return $events;
@@ -512,7 +498,7 @@ class CampaignModel extends CommonFormModel implements GlobalSearchInterface
                 $repo             = $this->formModel->getRepository();
                 $repo->setCurrentUser($this->userHelper->getUser());
 
-                $forms = $repo->getFormList('', 0, 0, $viewOther);
+                $forms = $repo->getFormList('', 0, 0, $viewOther, 'campaign');
 
                 foreach ($forms as $form) {
                     $choices['forms'][$form['id']] = $form['name'];
@@ -545,7 +531,7 @@ class CampaignModel extends CommonFormModel implements GlobalSearchInterface
      *
      * @return mixed
      */
-    public function getLeadCampaigns(?Lead $lead = null, $forList = false)
+    public function getLeadCampaigns(Lead $lead = null, $forList = false)
     {
         static $campaigns = [];
 
@@ -680,7 +666,6 @@ class CampaignModel extends CommonFormModel implements GlobalSearchInterface
         $events = [];
         $chart  = new LineChart($unit, $dateFrom, $dateTo, $dateFormat);
         $query  = new ChartQuery($this->em->getConnection(), $dateFrom, $dateTo);
-        $query->setGeneratedColumnProvider($this->generatedColumnsProvider);
 
         $contacts = $query->fetchTimeData('campaign_leads', 'date_added', $filter);
         $chart->setDataset($this->translator->trans('mautic.campaign.campaign.leads'), $contacts);
@@ -761,7 +746,7 @@ class CampaignModel extends CommonFormModel implements GlobalSearchInterface
      * @param int  $limit
      * @param bool $maxLeads
      */
-    public function rebuildCampaignLeads(Campaign $campaign, $limit = 1000, $maxLeads = false, ?OutputInterface $output = null): int
+    public function rebuildCampaignLeads(Campaign $campaign, $limit = 1000, $maxLeads = false, OutputInterface $output = null): int
     {
         $contactLimiter = new ContactLimiter($limit);
 
@@ -879,80 +864,5 @@ class CampaignModel extends CommonFormModel implements GlobalSearchInterface
     public function getCampaignMembersGroupByCountry(Campaign $campaign, \DateTimeImmutable $dateFromObject, \DateTimeImmutable $dateToObject): array
     {
         return $this->em->getRepository(CampaignLead::class)->getCampaignMembersGroupByCountry($campaign, $dateFromObject, $dateToObject);
-    }
-
-    /**
-     * @throws CampaignAlreadyUnpublishedException
-     * @throws CampaignVersionMismatchedException
-     * @throws Exception
-     */
-    public function transactionalCampaignUnPublish(Campaign $campaign): void
-    {
-        $this->em->beginTransaction();
-        $result = $this->getRepository()->getCampaignPublishAndVersionData($campaign->getId());
-
-        if (!(int) $result['is_published']) {
-            $this->em->commit();
-            throw new CampaignAlreadyUnpublishedException('Campaign is unpublished!');
-        }
-
-        if ((int) $result['version'] !== $campaign->getVersion()) {
-            $this->em->commit();
-            throw new CampaignVersionMismatchedException('Version do not match!');
-        }
-
-        $campaign->setIsPublished(false);
-        $campaign->markForVersionIncrement();
-        $this->saveEntity($campaign);
-        $this->em->commit();
-    }
-
-    /**
-     * @param array<int, array<string, mixed>> $deletedEvents
-     */
-    private function handleDeletedEventsWithRedirect(array $deletedEvents): void
-    {
-        if (empty($deletedEvents)) {
-            return;
-        }
-
-        $deletedIds  = [];
-        $deletedData = [];
-
-        foreach ($deletedEvents as $deleteInfo) {
-            $eventId       = $deleteInfo['id'];
-            $redirectEvent = $deleteInfo['redirectEvent'] ?? null;
-
-            if (str_starts_with($eventId, 'new')) {
-                continue;
-            }
-
-            $deletedIds[]  = $eventId;
-
-            $deletedData[] = [
-                'id'            => $eventId,
-                'redirectEvent' => $redirectEvent,
-            ];
-        }
-
-        if ($deletedIds) {
-            $this->getEventRepository()->nullEventRelationships($deletedIds);
-
-            $this->getEventRepository()->setEventsAsDeletedWithRedirect($deletedData);
-        }
-    }
-
-    private function setRedirectEvent(mixed $redirectEventValue, Event $event): void
-    {
-        if (empty($redirectEventValue) || is_array($redirectEventValue)) {
-            return;
-        }
-
-        if (is_numeric($redirectEventValue) || is_string($redirectEventValue)) {
-            $redirectEvent = $this->getEventRepository()->find($redirectEventValue);
-            if ($redirectEvent) {
-                $event->setRedirectEvent($redirectEvent);
-            }
-        }
     }
 }

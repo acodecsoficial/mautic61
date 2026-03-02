@@ -5,7 +5,7 @@ namespace MauticPlugin\MauticCrmBundle\Api;
 use MauticPlugin\MauticCrmBundle\Integration\CrmAbstractIntegration;
 
 /**
- * @method createLead(array<string, mixed> $fields, $lead)
+ * @method createLead()
  */
 class CrmApi
 {

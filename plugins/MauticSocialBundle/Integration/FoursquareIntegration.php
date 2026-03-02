@@ -200,7 +200,9 @@ class FoursquareIntegration extends SocialIntegration
             }
             */
 
-            $socialCache['activity'] = $activity;
+            if (!empty($activity)) {
+                $socialCache['activity'] = $activity;
+            }
         }
     }
 
@@ -281,7 +283,7 @@ class FoursquareIntegration extends SocialIntegration
         return false;
     }
 
-    public function getFormType(): null
+    public function getFormType()
     {
         return null;
     }

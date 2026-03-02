@@ -326,14 +326,18 @@ class DynamicsIntegration extends CrmAbstractIntegration
                 // OData-EntityId: https://clientname.crm.dynamics.com/api/data/v8.2/contacts(9844333b-c955-e711-80f1-c4346bad526c)
                 $header = $response->getHeader('OData-EntityId');
                 if (preg_match('/contacts\((.+)\)/', $header, $out)) {
-                    $id                = $out[1];
-                    $integrationEntity = new IntegrationEntity();
-                    $integrationEntity->setDateAdded(new \DateTime());
-                    $integrationEntity->setIntegration('Dynamics');
-                    $integrationEntity->setIntegrationEntity($object);
-                    $integrationEntity->setIntegrationEntityId($id);
-                    $integrationEntity->setInternalEntity('lead');
-                    $integrationEntity->setInternalEntityId($lead->getId());
+                    $id = $out[1];
+                    if (empty($integrationId)) {
+                        $integrationEntity = new IntegrationEntity();
+                        $integrationEntity->setDateAdded(new \DateTime());
+                        $integrationEntity->setIntegration('Dynamics');
+                        $integrationEntity->setIntegrationEntity($object);
+                        $integrationEntity->setIntegrationEntityId($id);
+                        $integrationEntity->setInternalEntity('lead');
+                        $integrationEntity->setInternalEntityId($lead->getId());
+                    } else {
+                        $integrationEntity = $integrationEntityRepo->getEntity($integrationId[0]['id']);
+                    }
                     $integrationEntity->setLastSyncDate(new \DateTime());
                     $this->em->persist($integrationEntity);
                     $this->em->flush($integrationEntity);

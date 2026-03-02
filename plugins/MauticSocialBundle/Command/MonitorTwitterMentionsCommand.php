@@ -3,14 +3,19 @@
 namespace MauticPlugin\MauticSocialBundle\Command;
 
 use MauticPlugin\MauticSocialBundle\Entity\Monitoring;
-use Symfony\Component\Console\Attribute\AsCommand;
 
-#[AsCommand(
-    name: 'social:monitor:twitter:mentions',
-    description: 'Searches for mentioned tweets'
-)]
 class MonitorTwitterMentionsCommand extends MonitorTwitterBaseCommand
 {
+    /**
+     * Configure the command, set name and options.
+     */
+    protected function configure()
+    {
+        $this->setName('social:monitor:twitter:mentions');
+
+        parent::configure();
+    }
+
     /**
      * Search for tweets by mention.
      *
@@ -47,4 +52,6 @@ class MonitorTwitterMentionsCommand extends MonitorTwitterBaseCommand
     {
         return 'twitter';
     }
+
+    protected static $defaultDescription = 'Searches for mentioned tweets';
 }

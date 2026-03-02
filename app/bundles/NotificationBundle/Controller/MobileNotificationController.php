@@ -69,10 +69,6 @@ class MobileNotificationController extends FormController
                     'col'  => 'mobile',
                     'val'  => 1,
                 ],
-                [
-                    'expr' => 'isNull',
-                    'col'  => 'translationParent',
-                ],
             ],
         ];
 
@@ -210,8 +206,6 @@ class MobileNotificationController extends FormController
         // Get click through stats
         $trackableLinks = $model->getNotificationClickStats($notification->getId());
 
-        [$translationParent, $translationChildren] = $notification->getTranslations();
-
         return $this->delegateView([
             'returnUrl'      => $this->generateUrl('mautic_mobile_notification_action', ['objectAction' => 'view', 'objectId' => $notification->getId()]),
             'viewParameters' => [
@@ -240,10 +234,6 @@ class MobileNotificationController extends FormController
                     ]
                 )->getContent(),
                 'dateRangeForm' => $dateRangeForm->createView(),
-                'translations'  => [
-                    'parent'   => $translationParent,
-                    'children' => $translationChildren,
-                ],
             ],
             'contentTemplate' => '@MauticNotification/MobileNotification/details.html.twig',
             'passthroughVars' => [

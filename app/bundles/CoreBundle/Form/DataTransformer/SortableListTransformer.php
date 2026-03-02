@@ -23,7 +23,7 @@ class SortableListTransformer implements DataTransformerInterface
     /**
      * @return array<mixed>
      */
-    public function transform(mixed $array): mixed
+    public function transform($array)
     {
         if ($this->useKeyValuePairs) {
             return $this->transformKeyValuePair($array);
@@ -35,7 +35,7 @@ class SortableListTransformer implements DataTransformerInterface
     /**
      * @return array<mixed>
      */
-    public function reverseTransform(mixed $array): mixed
+    public function reverseTransform($array)
     {
         if ($this->useKeyValuePairs) {
             return $this->reverseTransformKeyValuePair($array);

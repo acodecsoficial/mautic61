@@ -101,15 +101,13 @@ class ContactSegmentFilterCrate
     public function getFilter()
     {
         $excludeTypecastOperators = [
-            OperatorOptions::INCLUDING_ANY,
-            OperatorOptions::EXCLUDING_ANY,
-            OperatorOptions::INCLUDING_ALL,
-            OperatorOptions::EXCLUDING_ALL,
+            OperatorOptions::IN,
+            OperatorOptions::NOT_IN,
             OperatorOptions::REGEXP,
             OperatorOptions::NOT_REGEXP,
         ];
 
-        if (!in_array($this->operator, $excludeTypecastOperators, true)) {
+        if (!in_array($this->operator, $excludeTypecastOperators)) {
             switch ($this->getType()) {
                 case 'number':
                     return (float) $this->filter;
@@ -177,7 +175,7 @@ class ContactSegmentFilterCrate
     {
         $operator = $filter['operator'] ?? null;
 
-        if ('multiselect' === $this->getType() && in_array($operator, [OperatorOptions::INCLUDING_ANY, OperatorOptions::EXCLUDING_ANY, OperatorOptions::INCLUDING_ALL, OperatorOptions::EXCLUDING_ALL])) {
+        if ('multiselect' === $this->getType() && in_array($operator, ['in', '!in'])) {
             $neg            = !str_contains($operator, '!') ? '' : '!';
             $this->operator = $neg.$this->getType();
 

@@ -4,10 +4,6 @@ namespace Mautic\EmailBundle\Helper;
 
 class UrlMatcher
 {
-    /**
-     * @param string[] $urlsToCheckAgainst
-     * @param string   $urlToFind
-     */
     public static function hasMatch(array $urlsToCheckAgainst, $urlToFind): bool
     {
         $urlToFind = self::sanitizeUrl($urlToFind);
@@ -23,17 +19,13 @@ class UrlMatcher
         return false;
     }
 
-    private static function sanitizeUrl(string $url): string
+    /**
+     * @return mixed|string
+     */
+    private static function sanitizeUrl($url)
     {
         // Handle escaped forward slashes as BC
         $url = str_replace('\\/', '/', $url);
-
-        // Only decode square brackets for array notation normalization
-        // %5B = [ and %5D = ]
-        $url = str_replace(['%5B', '%5b', '%5D', '%5d'], ['[', '[', ']', ']'], $url);
-
-        // Normalize array parameter notation: convert [0], [1], etc. to []
-        $url = preg_replace('/\[\d+\]/', '[]', $url);
 
         // Ignore ending slash
         $url = rtrim($url, '/');

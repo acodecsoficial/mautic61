@@ -164,9 +164,6 @@ class DynamicContentSubscriber implements EventSubscriberInterface
 
         for ($i = 0; $i < $contentSlots->length; ++$i) {
             $slot = $contentSlots->item($i);
-            if (!$slot instanceof \DOMElement) {
-                continue;
-            }
             if (!$slotName = $slot->getAttribute('data-param-slot-name')) {
                 continue;
             }
@@ -177,9 +174,7 @@ class DynamicContentSubscriber implements EventSubscriberInterface
 
             $newnode = $dom->createDocumentFragment();
             $newnode->appendXML('<![CDATA['.mb_encode_numericentity($slotContent, [0x80, 0x10FFFF, 0, 0xFFFFF], 'UTF-8').']]>');
-            if ($slot->parentNode instanceof \DOMNode) {
-                $slot->parentNode->replaceChild($newnode, $slot);
-            }
+            $slot->parentNode->replaceChild($newnode, $slot);
         }
 
         $content = $dom->saveHTML();

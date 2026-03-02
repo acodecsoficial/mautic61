@@ -3,7 +3,6 @@
 namespace Mautic\CoreBundle\Command;
 
 use Mautic\CoreBundle\Helper\UpdateHelper;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -12,10 +11,6 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 /**
  * CLI Command to fetch application updates.
  */
-#[AsCommand(
-    name: 'mautic:update:find',
-    description: 'Fetches updates for Mautic'
-)]
 class FindUpdatesCommand extends Command
 {
     public function __construct(
@@ -27,7 +22,7 @@ class FindUpdatesCommand extends Command
 
     protected function configure()
     {
-        $this
+        $this->setName('mautic:update:find')
             ->setHelp(<<<'EOT'
 The <info>%command.name%</info> command checks for updates for the Mautic application.
 
@@ -51,4 +46,6 @@ EOT
 
         return Command::SUCCESS;
     }
+
+    protected static $defaultDescription = 'Fetches updates for Mautic';
 }

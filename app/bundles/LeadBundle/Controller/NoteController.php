@@ -191,11 +191,7 @@ class NoteController extends FormController
                     ]
                 );
                 $passthroughVars['noteId'] = $note->getId();
-
-                $this->addFlashMessage('mautic.lead.note.created');
             }
-
-            $passthroughVars['flashes'] = $this->getFlashContent();
 
             return new JsonResponse($passthroughVars);
         } else {

@@ -34,9 +34,7 @@
 
 {% block rightFormContent %}
 {{ form_row(form.category) }}
-{{ form_row(form.projects) }}
 {{ form_row(form.language) }}
-{{ form_row(form.translationParentSelector) }}
 {{ form_row(form.isPublished, {
     'attr': {
         'data-none': 'mautic.core.form.sending_paused',
@@ -68,14 +66,14 @@
             'cancelUrl'          : 'mautic_sms_index',
             'header'             : 'mautic.sms.type.header',
             'typeOneHeader'      : 'mautic.sms.type.template.header',
-            'typeOnePictogram': 'process--automation',
-            'typeOneTag'         : 'mautic.sms.type.template.tag',
-            'typeOneDifferences' : ['mautic.sms.type.template.differences.1st', 'mautic.sms.type.template.differences.2nd', 'mautic.sms.type.template.differences.3rd', 'mautic.sms.type.template.differences.4th', 'mautic.sms.type.template.differences.5th'],
+            'typeOneIconClass'   : 'ri-message-3-fill',
+            'typeOneDescription' : 'mautic.sms.type.template.description',
+            'typeOneDifferences' : '',
             'typeOneOnClick'     : "Mautic.selectSmsType('template');",
             'typeTwoHeader'      : 'mautic.sms.type.list.header',
-            'typeTwoTag'         : 'mautic.sms.type.list.tag',
-            'typeTwoPictogram': 'chart--pie',
-            'typeTwoDifferences' : ['mautic.sms.type.list.differences.1st', 'mautic.sms.type.list.differences.2nd', 'mautic.sms.type.list.differences.3rd', 'mautic.sms.type.list.differences.4th', 'mautic.sms.type.list.differences.5th'],
+            'typeTwoIconClass'   : 'ri-pie-chart-fill',
+            'typeTwoDescription' : 'mautic.sms.type.list.description',
+            'typeTwoDifferences' : '',
             'typeTwoOnClick'     : "Mautic.selectSmsType('list');",
         }
     ) -}}

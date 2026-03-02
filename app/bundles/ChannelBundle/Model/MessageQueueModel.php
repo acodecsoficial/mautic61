@@ -175,10 +175,11 @@ class MessageQueueModel extends FormModel
         return true;
     }
 
-    public function sendMessages($channel = null, $channelId = null, int $limit = 50): int
+    public function sendMessages($channel = null, $channelId = null): int
     {
         // Note when the process started for batch purposes
         $processStarted = new \DateTime();
+        $limit          = 50;
         $counter        = 0;
 
         foreach ($this->getRepository()->getQueuedMessages($limit, $processStarted, $channel, $channelId) as $queue) {
@@ -313,6 +314,19 @@ class MessageQueueModel extends FormModel
     }
 
     /**
+     * @deprecated to be removed in 3.0; use reschedule method instead
+     *
+     * @param string $rescheduleInterval
+     * @param bool   $persist
+     */
+    public function rescheduleMessage($message, $rescheduleInterval = null, $leadId = null, $channel = null, $channelId = null, $persist = false): void
+    {
+        $rescheduleInterval = null == $rescheduleInterval ? self::DEFAULT_RESCHEDULE_INTERVAL : ('P'.$rescheduleInterval);
+
+        $this->reschedule($message, new \DateInterval($rescheduleInterval), $leadId, $channel, $channelId, $persist);
+    }
+
+    /**
      * @param array $channelIds
      */
     public function getQueuedChannelCount($channel, $channelIds = []): int
@@ -325,7 +339,7 @@ class MessageQueueModel extends FormModel
      *
      * @throws \Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException
      */
-    protected function dispatchEvent($action, &$entity, $isNew = false, ?Event $event = null): ?Event
+    protected function dispatchEvent($action, &$entity, $isNew = false, Event $event = null): ?Event
     {
         switch ($action) {
             case 'process_message_queue':

@@ -13,11 +13,6 @@ return [
             ],
         ],
     ],
-    'categories' => [
-        'dynamicContent' => [
-            'class' => Mautic\DynamicContentBundle\Entity\DynamicContent::class,
-        ],
-    ],
     'routes' => [
         'main' => [
             'mautic_dynamicContent_index' => [

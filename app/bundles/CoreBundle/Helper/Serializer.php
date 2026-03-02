@@ -20,12 +20,10 @@ class Serializer
             throw new \InvalidArgumentException(sprintf('The string %s contains an object.', $serializedString));
         }
 
-        $result = @unserialize($serializedString, $options);
-
-        if (false === $result && 'b:0;' !== $serializedString) {
-            throw new \ErrorException('The serialized string is invalid: '.$serializedString);
+        if (version_compare(phpversion(), '7.0.0', '<')) {
+            return unserialize($serializedString);
         }
 
-        return $result;
+        return unserialize($serializedString, $options);
     }
 }

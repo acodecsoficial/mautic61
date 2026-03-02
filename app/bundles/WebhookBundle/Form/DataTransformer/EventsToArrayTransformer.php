@@ -24,7 +24,7 @@ class EventsToArrayTransformer implements DataTransformerInterface
      *
      * @return array<int, string>
      */
-    public function transform(mixed $events): mixed
+    public function transform($events)
     {
         $eventArray = [];
         foreach ($events as $event) {
@@ -41,7 +41,7 @@ class EventsToArrayTransformer implements DataTransformerInterface
      *
      * @return Collection<int, Event>
      */
-    public function reverseTransform(mixed $submittedArray): mixed
+    public function reverseTransform($submittedArray)
     {
         // Get a list of existing events and types
 

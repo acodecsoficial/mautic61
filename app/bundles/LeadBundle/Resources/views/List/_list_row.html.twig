@@ -22,17 +22,16 @@
                 },
                 'routeBase': 'segment',
                 'langVar': 'lead.list',
-                'customButtons': {
-                    'viewcontacts': {
+                'custom': [
+                    {
                         'attr': {
                             'data-toggle': 'ajax',
                             'href': path('mautic_contact_index', {'search': listCommand ~ ':' ~ item.alias}),
                         },
-                        'iconClass': 'ri-team-line',
-                        'btnText': 'mautic.lead.list.view_contacts'|trans,
-                        'priority': 100
-                    }
-                },
+                        'icon': 'ri-team-line',
+                        'label': 'mautic.lead.list.view_contacts',
+                    },
+                ],
         }) }}
     </td>
     <td>
@@ -45,7 +44,6 @@
             {% else %}
                 {{ item.name }} ({{ item.alias }})
             {% endif %}
-            {{ include('@MauticProject/Modules/projects.html.twig') }}
             {% if not item.isGlobal and app.user.id != item.createdBy %}
                 <br/>
                 <span class="small">({{ item.createdByUser }})</span>
@@ -55,8 +53,8 @@
             {% if hoursSinceLastBuilt >= segmentRebuildWarningThreshold %}
                 <label class="control-label" data-toggle="tooltip"
                        data-container="body" data-placement="top" title=""
-                       data-original-title="{{ 'mautic.lead.list.form.config.segment_rebuild_time.message'|trans({'%count%': hoursSinceLastBuilt  | number_format(2)}) }}">
-                    <i class="text-danger ri-error-warning-line fs-14"></i></label>
+                       data-original-title="{{ 'mautic.lead.list.form.config.segment_rebuild_time.message'|trans({'%count%': hoursSinceLastBuilt}) }}">
+                    <i class="text-danger ri-error-warning-line-circle fs-14"></i></label>
             {% endif %}
             {% if item.lastBuiltTime >= segmentBuildWarningThreshold %}
                 <label class="control-label" data-toggle="tooltip"
@@ -66,9 +64,11 @@
             {% endif %}
             {{ customContent('segment.name', mauticTemplateVars) }}
         </div>
-        {{ include('@MauticCore/Helper/description--inline.html.twig', {
-            'description': item.description
-        }) }}
+        {% if item.description %}
+            <div class="text-secondary mt-4">
+                <small>{{ item.description|purify }}</small>
+            </div>
+        {% endif %}
     </td>
     <td class="visible-md visible-lg">
         <span size="sm" class="label {{ item.needsRebuild() ? 'label-info' : 'label-gray' }} col-count" data-id="{{ item.id }}">

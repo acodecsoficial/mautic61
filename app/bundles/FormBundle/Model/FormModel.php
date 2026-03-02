@@ -28,7 +28,6 @@ use Mautic\FormBundle\Helper\FormFieldHelper;
 use Mautic\FormBundle\Helper\FormUploader;
 use Mautic\FormBundle\ProgressiveProfiling\DisplayManager;
 use Mautic\LeadBundle\Entity\Lead;
-use Mautic\LeadBundle\Helper\CustomFieldValueHelper;
 use Mautic\LeadBundle\Helper\FormFieldHelper as ContactFieldHelper;
 use Mautic\LeadBundle\Helper\PrimaryCompanyHelper;
 use Mautic\LeadBundle\Model\FieldModel as LeadFieldModel;
@@ -127,7 +126,7 @@ class FormModel extends CommonFormModel implements GlobalSearchInterface
     /**
      * @throws MethodNotAllowedHttpException
      */
-    protected function dispatchEvent($action, &$entity, $isNew = false, ?Event $event = null): ?Event
+    protected function dispatchEvent($action, &$entity, $isNew = false, Event $event = null): ?Event
     {
         if (!$entity instanceof Form) {
             throw new MethodNotAllowedHttpException(['Form']);
@@ -421,13 +420,9 @@ class FormModel extends CommonFormModel implements GlobalSearchInterface
         $styleToRender = '@MauticForm/Builder/_style.html.twig';
         $formToRender  = '@MauticForm/Builder/form.html.twig';
 
-        foreach (['_style', 'style'] as $styleFile) {
-            $stylePath = "@themes/{$theme}/html/MauticFormBundle/Builder/{$styleFile}.html.twig";
-            if ($this->twig->getLoader()->exists($stylePath)) {
-                $styleToRender = $stylePath;
-            }
+        if ($this->twig->getLoader()->exists('@themes/'.$theme.'/html/MauticFormBundle/Builder/_style.html.twig')) {
+            $styleToRender = '@themes/'.$theme.'/html/MauticFormBundle/Builder/_style.html.twig';
         }
-
         if ($this->twig->getLoader()->exists('@themes/'.$theme.'/html/MauticFormBundle/Builder/form.html.twig')) {
             $formToRender = '@themes/'.$theme.'/html/MauticFormBundle/Builder/form.html.twig';
         }
@@ -740,9 +735,9 @@ class FormModel extends CommonFormModel implements GlobalSearchInterface
     /**
      * @param string $formHtml
      */
-    public function populateValuesWithLead(Form $form, &$formHtml, ?string $formName = null): void
+    public function populateValuesWithLead(Form $form, &$formHtml): void
     {
-        $formName ??= $form->generateFormName();
+        $formName          = $form->generateFormName();
         $fields            = $form->getFields();
         $autoFillFields    = [];
         $objectsToAutoFill = ['contact', 'company'];
@@ -779,12 +774,6 @@ class FormModel extends CommonFormModel implements GlobalSearchInterface
             $value = $leadArray[$field->getMappedField()] ?? '';
             // just skip string empty field
             if ('' !== $value) {
-                $mappedFieldAlias = $field->getMappedField();
-                $mappedField      = $this->leadFieldModel->getEntityByAlias($mappedFieldAlias);
-                if ($mappedField && 'boolean' === $mappedField->getType()) {
-                    $properties = $mappedField->getProperties();
-                    $value      = CustomFieldValueHelper::normalize($value, 'boolean', $properties);
-                }
                 $this->fieldHelper->populateField($field, $value, $formName, $formHtml);
             }
         }
@@ -860,7 +849,7 @@ class FormModel extends CommonFormModel implements GlobalSearchInterface
      * @param array $filters
      * @param array $options
      */
-    public function getFormList($limit = 10, ?\DateTime $dateFrom = null, ?\DateTime $dateTo = null, $filters = [], $options = []): array
+    public function getFormList($limit = 10, \DateTime $dateFrom = null, \DateTime $dateTo = null, $filters = [], $options = []): array
     {
         $q = $this->em->getConnection()->createQueryBuilder();
         $q->select('t.id, t.name, t.date_added, t.date_modified')

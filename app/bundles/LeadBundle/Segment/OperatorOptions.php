@@ -28,23 +28,9 @@ class OperatorOptions
 
     public const NOT_BETWEEN           = '!between';
 
-    /**
-     * @deprecated Use OperatorOptions::INCLUDING_ANY
-     */
     public const IN                    = 'in';
 
-    /**
-     * @deprecated Use OperatorOptions::EXCLUDING_ANY
-     */
     public const NOT_IN                = '!in';
-
-    public const INCLUDING_ANY         = 'in';
-
-    public const EXCLUDING_ANY         = '!in';
-
-    public const INCLUDING_ALL         = 'in_all';
-
-    public const EXCLUDING_ALL         = '!in_all';
 
     public const REGEXP                = 'regexp';
 
@@ -124,25 +110,15 @@ class OperatorOptions
             'negate_expr' => 'between',
             'hide'        => true,
         ],
-        self::INCLUDING_ANY => [
+        self::IN => [
             'label'       => 'mautic.lead.list.form.operator.in',
             'expr'        => 'in',
             'negate_expr' => 'notIn',
         ],
-        self::EXCLUDING_ANY => [
+        self::NOT_IN => [
             'label'       => 'mautic.lead.list.form.operator.notin',
             'expr'        => 'notIn',
             'negate_expr' => 'in',
-        ],
-        self::INCLUDING_ALL => [
-            'label'       => 'mautic.lead.list.form.operator.in_all',
-            'expr'        => self::INCLUDING_ALL,
-            'negate_expr' => self::EXCLUDING_ALL,
-        ],
-        self::EXCLUDING_ALL => [
-            'label'       => 'mautic.lead.list.form.operator.notin_all',
-            'expr'        => self::EXCLUDING_ALL,
-            'negate_expr' => self::INCLUDING_ALL,
         ],
         self::REGEXP => [
             'label'       => 'mautic.lead.list.form.operator.regexp',

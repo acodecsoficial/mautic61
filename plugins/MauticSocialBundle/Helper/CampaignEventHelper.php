@@ -114,7 +114,7 @@ class CampaignEventHelper
          * @var Trackable $trackable
          */
         foreach ($trackables as $token => $trackable) {
-            $tokens[$token] = $this->trackableModel->generateTrackableUrl($trackable, array_merge($this->clickthrough, ['lead' => $lead['id']]));
+            $tokens[$token] = $this->trackableModel->generateTrackableUrl($trackable, $this->clickthrough);
         }
 
         return str_replace(array_keys($tokens), array_values($tokens), $text);

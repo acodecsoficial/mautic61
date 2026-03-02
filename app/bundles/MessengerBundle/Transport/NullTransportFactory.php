@@ -9,7 +9,7 @@ use Symfony\Component\Messenger\Transport\TransportFactoryInterface;
 use Symfony\Component\Messenger\Transport\TransportInterface;
 
 /**
- * Needed for the E2E tests.
+ * @deprecated since Mautic 5.0, to be removed in 6.0 with no replacement.
  */
 class NullTransportFactory implements TransportFactoryInterface
 {

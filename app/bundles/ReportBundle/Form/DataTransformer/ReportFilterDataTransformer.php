@@ -24,9 +24,8 @@ class ReportFilterDataTransformer implements DataTransformerInterface
     /**
      * @return array
      */
-    public function transform(mixed $value): mixed
+    public function transform($filters)
     {
-        $filters = $value;
         if (!is_array($filters)) {
             return [];
         }
@@ -38,22 +37,8 @@ class ReportFilterDataTransformer implements DataTransformerInterface
             }
             $type = $this->columns[$f['column']]['type'];
             if (in_array($type, ['datetime', 'time', DateTimeType::class, DateType::class, TimeType::class])) {
-                // Skip datetime parsing for string-like conditions
-                if (isset($f['condition']) && in_array($f['condition'], ['like', 'notLike', 'startsWith', 'endsWith', 'contains'])) {
-                    continue;
-                }
-                $dt         = new DateTimeHelper($f['value'], null, 'utc');
-
-                if (in_array($type, ['date', DateType::class])) {
-                    // Pass the specific format for a date
-                    $f['value'] = $dt->toLocalString('Y-m-d');
-                } elseif (in_array($type, ['time', TimeType::class])) {
-                    // Pass the specific format for a time
-                    $f['value'] = $dt->toLocalString('H:i:s');
-                } else {
-                    // Call without arguments for the default datetime format
-                    $f['value'] = $dt->toLocalString();
-                }
+                $dt         = new DateTimeHelper($f['value'], '', 'utc');
+                $f['value'] = $dt->toLocalString();
             }
         }
 
@@ -63,9 +48,8 @@ class ReportFilterDataTransformer implements DataTransformerInterface
     /**
      * @return array
      */
-    public function reverseTransform(mixed $value): mixed
+    public function reverseTransform($filters)
     {
-        $filters = $value;
         if (!is_array($filters)) {
             return [];
         }
@@ -77,11 +61,7 @@ class ReportFilterDataTransformer implements DataTransformerInterface
             }
             $type = $this->columns[$f['column']]['type'];
             if (in_array($type, ['datetime', 'time'])) {
-                // Skip datetime parsing for string-like conditions
-                if (isset($f['condition']) && in_array($f['condition'], ['like', 'notLike', 'startsWith', 'endsWith', 'contains'])) {
-                    continue;
-                }
-                $dt         = new DateTimeHelper($f['value'], null, 'local');
+                $dt         = new DateTimeHelper($f['value'], '', 'local');
                 $f['value'] = $dt->toUtcString();
             }
         }

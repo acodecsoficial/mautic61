@@ -15,10 +15,8 @@ use Mautic\EmailBundle\Entity\EmailRepository;
 use Mautic\EmailBundle\Entity\StatRepository;
 use Mautic\LeadBundle\Entity\DoNotContact;
 use Mautic\LeadBundle\Model\CompanyReportData;
-use Mautic\LeadBundle\Report\DncReportService;
 use Mautic\LeadBundle\Report\FieldsBuilder;
 use Mautic\ReportBundle\Event\ReportBuilderEvent;
-use Mautic\ReportBundle\Event\ReportDataEvent;
 use Mautic\ReportBundle\Event\ReportGeneratorEvent;
 use Mautic\ReportBundle\Event\ReportGraphEvent;
 use Mautic\ReportBundle\ReportEvents;
@@ -163,7 +161,6 @@ class ReportSubscriber implements EventSubscriberInterface
         private EmailRepository $emailRepository,
         private GeneratedColumnsProviderInterface $generatedColumnsProvider,
         private FieldsBuilder $fieldsBuilder,
-        private DncReportService $dncReportService,
     ) {
     }
 
@@ -173,7 +170,6 @@ class ReportSubscriber implements EventSubscriberInterface
             ReportEvents::REPORT_ON_BUILD          => ['onReportBuilder', 0],
             ReportEvents::REPORT_ON_GENERATE       => ['onReportGenerate', 0],
             ReportEvents::REPORT_ON_GRAPH_GENERATE => ['onReportGraphGenerate', 0],
-            ReportEvents::REPORT_ON_DISPLAY        => ['onReportDisplay', 0],
         ];
     }
 
@@ -256,8 +252,7 @@ class ReportSubscriber implements EventSubscriberInterface
             $event->getCategoryColumns(),
             self::DNC_COLUMNS,
             self::EMAIL_VARIANT_COLUMNS,
-            self::CLICK_COLUMNS,
-            $this->dncReportService->getDncColumns()
+            self::CLICK_COLUMNS
         );
         $data = [
             'display_name' => 'mautic.email.emails',
@@ -268,7 +263,6 @@ class ReportSubscriber implements EventSubscriberInterface
         $event->addGraph($context, 'pie', 'mautic.email.graph.pie.read.ingored.unsubscribed.bounced');
         $event->addGraph($context, 'pie', 'mautic.email.graph.pie.sent.read.clicked.unsubscribed');
         $event->addGraph($context, 'table', 'mautic.email.table.most.emails.clicks');
-        $event->addGraph($context, 'table', 'mautic.email.table.most.emails.table');
 
         if ($event->checkContext(self::CONTEXT_EMAIL_STATS)) {
             // Ratios are not applicable for individual stats
@@ -530,7 +524,6 @@ class ReportSubscriber implements EventSubscriberInterface
                     break;
 
                 case 'mautic.email.graph.pie.ignored.read.failed':
-                    $queryBuilder->resetQueryPart('groupBy');
                     $counts = $this->statRepository->getIgnoredReadFailed($queryBuilder);
                     $chart  = new PieChart();
                     $chart->setDataset($options['translator']->trans('mautic.email.read.emails'), $counts['read']);
@@ -789,18 +782,6 @@ class ReportSubscriber implements EventSubscriberInterface
             }
             unset($queryBuilder);
         }
-    }
-
-    public function onReportDisplay(ReportDataEvent $event): void
-    {
-        $data = $event->getData();
-
-        if ($event->checkContext([self::CONTEXT_EMAIL_STATS])) {
-            $data = $this->dncReportService->processDncStatusDisplay($data);
-        }
-
-        $event->setData($data);
-        unset($data);
     }
 
     /**

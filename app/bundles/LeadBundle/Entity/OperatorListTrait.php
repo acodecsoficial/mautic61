@@ -33,10 +33,8 @@ trait OperatorListTrait
                 OperatorOptions::NOT_EMPTY,
                 OperatorOptions::REGEXP,
                 OperatorOptions::NOT_REGEXP,
-                OperatorOptions::INCLUDING_ANY,
-                OperatorOptions::EXCLUDING_ANY,
-                OperatorOptions::INCLUDING_ALL,
-                OperatorOptions::EXCLUDING_ALL,
+                OperatorOptions::IN,
+                OperatorOptions::NOT_IN,
             ],
         ],
         'bool' => [
@@ -68,10 +66,8 @@ trait OperatorListTrait
         ],
         'multiselect' => [
             'include' => [
-                OperatorOptions::INCLUDING_ANY,
-                OperatorOptions::EXCLUDING_ANY,
-                OperatorOptions::INCLUDING_ALL,
-                OperatorOptions::EXCLUDING_ALL,
+                OperatorOptions::IN,
+                OperatorOptions::NOT_IN,
                 OperatorOptions::EMPTY,
                 OperatorOptions::NOT_EMPTY,
             ],
@@ -202,7 +198,7 @@ trait OperatorListTrait
             $choices = array_diff_key($choices, array_flip($definition['exclude']));
         }
 
-        if (property_exists($this, 'translator')) { // @phpstan-ignore-line based on https://github.com/phpstan/phpstan/issues/9095 (Call to function property_exists() with ...  'translator' will always evaluate to false.)
+        if (property_exists($this, 'translator')) {
             foreach ($choices as $value => $label) {
                 $choices[$value] = $this->translator->trans($label);
             }
@@ -211,6 +207,9 @@ trait OperatorListTrait
         return array_flip($choices);
     }
 
+    /**
+     * @deprecated These aliases are subscribed in the TypeOperatorSubscriber now so this is not necessary. To be removed in next Mautic version.
+     */
     protected function normalizeType(mixed $type): mixed
     {
         if (null === $type) {

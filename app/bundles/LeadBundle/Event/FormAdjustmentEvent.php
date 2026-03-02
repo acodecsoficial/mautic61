@@ -81,9 +81,4 @@ final class FormAdjustmentEvent extends Event
     {
         return $this->operatorIsOneOf(OperatorOptions::EMPTY, OperatorOptions::NOT_EMPTY);
     }
-
-    public function filterShouldBeRequired(): bool
-    {
-        return !$this->operatorIsOneOf(OperatorOptions::EMPTY, OperatorOptions::NOT_EMPTY);
-    }
 }

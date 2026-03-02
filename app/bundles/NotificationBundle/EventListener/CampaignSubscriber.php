@@ -216,9 +216,6 @@ class CampaignSubscriber implements EventSubscriberInterface
 
     private function buildNotificationToSend(Notification $notification, Lead $lead): Notification
     {
-        [$ignore, $notification] = $this->notificationModel->getTranslatedEntity($notification, $lead);
-        \assert($notification instanceof Notification);
-
         /** @var TokenReplacementEvent $tokenEvent */
         $tokenEvent = $this->dispatcher->dispatch(
             new TokenReplacementEvent(

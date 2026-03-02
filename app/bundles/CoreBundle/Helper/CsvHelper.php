@@ -1,15 +1,16 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Mautic\CoreBundle\Helper;
 
-final class CsvHelper
+class CsvHelper
 {
     /**
-     * @return mixed[]|false
+     * @param string $filename
+     * @param string $delimiter
+     *
+     * @return array
      */
-    public static function csv_to_array(string $filename = '', string $separator = ',', string $enclosure = '"', string $escape = '\\'): array|false
+    public static function csv_to_array($filename = '', $delimiter = ',')
     {
         if (!file_exists($filename) || !is_readable($filename)) {
             return false;
@@ -18,7 +19,7 @@ final class CsvHelper
         $header = null;
         $data   = [];
         if (false !== ($handle = fopen($filename, 'r'))) {
-            while (false !== ($row = fgetcsv($handle, 1000, $separator, $enclosure, $escape))) {
+            while (false !== ($row = fgetcsv($handle, 1000, $delimiter))) {
                 if (!$header) {
                     $header = $row;
                 } else {
@@ -31,21 +32,11 @@ final class CsvHelper
         return $data;
     }
 
-    /**
-     * @param string[] $headers
-     *
-     * @return string[]
-     */
     public static function sanitizeHeaders(array $headers): array
     {
-        return array_map(fn ($header) => trim($header), $headers);
+        return array_map('trim', $headers);
     }
 
-    /**
-     * @param string[] $headers
-     *
-     * @return string[]
-     */
     public static function convertHeadersIntoFields(array $headers): array
     {
         sort($headers);
@@ -62,22 +53,5 @@ final class CsvHelper
         }
 
         return $importedFields;
-    }
-
-    /**
-     * @param resource $stream
-     * @param mixed[]  $data
-     */
-    public static function putCsv($stream, array $data, string $separator = ',', string $enclosure = '"', string $escape = '\\'): int|false
-    {
-        return fputcsv($stream, $data, $separator, $enclosure, $escape);
-    }
-
-    /**
-     * @return mixed[]
-     */
-    public static function strGetCsv(string $string, string $separator = ',', string $enclosure = '"', string $escape = '\\'): array
-    {
-        return str_getcsv($string, $separator, $enclosure, $escape);
     }
 }

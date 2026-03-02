@@ -3,7 +3,6 @@
 namespace Mautic\CoreBundle\Command;
 
 use Mautic\CoreBundle\Helper\PathsHelper;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -12,10 +11,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 /**
  * CLI Command to convert PHP theme config to JSON.
  */
-#[AsCommand(
-    name: 'mautic:theme:json-config',
-    description: 'Converts theme config to JSON from PHP'
-)]
 class ConvertConfigCommand extends Command
 {
     public function __construct(
@@ -26,7 +21,7 @@ class ConvertConfigCommand extends Command
 
     protected function configure()
     {
-        $this
+        $this->setName('mautic:theme:json-config')
             ->setDefinition([
                 new InputOption(
                     'theme', null, InputOption::VALUE_REQUIRED,
@@ -113,4 +108,6 @@ EOT
 
         return Command::SUCCESS;
     }
+
+    protected static $defaultDescription = 'Converts theme config to JSON from PHP';
 }

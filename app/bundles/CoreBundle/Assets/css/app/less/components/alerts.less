@@ -28,7 +28,7 @@
   &:after {
     display: flex;
     content: "";
-    width: 3px;
+    width: 5px;
     height: 100%;
     position: absolute;
     left: 0;
@@ -153,34 +153,23 @@
   }
 
   &--warning {
-    border-left-color: var(--support-warning);
+    border-left-color: @brand-warning;
 
     a {
-      color: var(--support-warning);
+      color: @brand-warning;
       &:hover {
-        color: var(--support-warning-inverse);
+        color: lighten(@brand-warning, 20%);
       }
     }
   }
 
   &--error {
-    border-left-color: var(--support-error);
+    border-left-color: @brand-danger;
 
     a {
-      color: var(--support-error);
+      color: @brand-danger;
       &:hover {
-        color: var(--support-error-inverse);
-      }
-    }
-  }
-
-  &--success {
-    border-left-color: var(--support-success);
-
-    a {
-      color: var(--support-success);
-      &:hover {
-        color: var(--support-success-inverse);
+        color: lighten(@brand-danger, 20%);
       }
     }
   }

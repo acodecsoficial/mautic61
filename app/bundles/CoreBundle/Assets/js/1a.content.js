@@ -1,6 +1,4 @@
 const ckEditors = new Map();
-MauticVars.maxButtons = ['undo', 'redo', '|', 'bold', 'italic', 'underline', 'heading', 'fontfamily', 'fontsize', 'fontColor', 'fontBackgroundColor', 'alignment', 'numberedList', 'bulletedList', 'blockQuote', 'TokenPlugin', 'removeFormat', 'link', 'ckfinder', 'mediaEmbed', 'insertTable', 'sourceEditing'];
-
 /**
  * Takes a given route, retrieves the HTML, and then updates the content
  *
@@ -318,8 +316,6 @@ Mautic.processPageContent = function (response) {
  * Initiate various functions on page load, manual or ajax
  */
 Mautic.onPageLoad = function (container, response, inModal) {
-    mQuery(container).trigger('mautic:onPageLoad:before', [container, response, inModal]);
-
     Mautic.initDateRangePicker(container + ' #daterange_date_from', container + ' #daterange_date_to');
 
     //initiate links
@@ -402,10 +398,6 @@ Mautic.onPageLoad = function (container, response, inModal) {
         mQuery(document).ready(callback(this));
     });
 
-    mQuery(container + " *[data-copy]").off('click.copy').on('click.copy', function (event) {
-        event.preventDefault();
-        Mautic.copyToClipboard(mQuery(this).data('copy'));
-    });
 
     mQuery(container + " input[data-toggle='color']").each(function() {
         Mautic.activateColorPicker(this);
@@ -588,6 +580,8 @@ Mautic.onPageLoad = function (container, response, inModal) {
     if (mQuery(container + ' textarea.editor:not(".editor-dynamic-content")').length) {
         mQuery(container + ' textarea.editor:not(".editor-dynamic-content")').each(function () {
             const textarea = mQuery(this);
+
+            const maxButtons = ['undo', 'redo', '|', 'bold', 'italic', 'underline', 'heading', 'fontfamily', 'fontsize', 'fontColor', 'fontBackgroundColor', 'alignment', 'numberedList', 'bulletedList', 'blockQuote', 'TokenPlugin', 'removeFormat', 'link', 'ckfinder', 'mediaEmbed', 'insertTable', 'sourceEditing'];
             let minButtons = ['undo', 'redo', '|', 'bold', 'italic', 'underline'];
 
             if (textarea.hasClass('editor-dynamic-content') || textarea.hasClass('editor-basic')) {
@@ -596,7 +590,7 @@ Mautic.onPageLoad = function (container, response, inModal) {
 
             let ckEditorToolbar = minButtons;
             if (textarea.hasClass('editor-advanced') || textarea.hasClass('editor-basic-fullpage')) {
-                ckEditorToolbar = MauticVars.maxButtons;
+                ckEditorToolbar = maxButtons;
             }
 
             Mautic.ConvertFieldToCkeditor(textarea, ckEditorToolbar);
@@ -725,8 +719,6 @@ Mautic.onPageLoad = function (container, response, inModal) {
             }
         }, false));
     }
-
-    mQuery(container).trigger('mautic:onPageLoad:after', [container, response, inModal]);
 };
 
 Mautic.setDynamicContentEditors = function(container) {
@@ -822,11 +814,9 @@ Mautic.onPageUnload = function (container, response) {
 
         if (ckEditors.size > 0) {
             ckEditors.forEach(function(value, key, map){
-                if (container === '#app-content' || container === 'body' || mQuery(container).find(key).length > 0 || mQuery(key).closest(container).length > 0) {
-                    map.get(key).destroy();
-                    map.delete(key);
-                }
-            });
+                map.get(key).destroy()
+            })
+            ckEditors.clear();
         }
 
         mQuery(container + " input[data-toggle='color']").each(function() {
@@ -883,7 +873,7 @@ Mautic.onPageUnload = function (container, response) {
  * @param event
  * @returns {boolean}
  */
-Mautic.ajaxifyLink = function (el, event, extraData = {}) {
+Mautic.ajaxifyLink = function (el, event) {
     if (mQuery(el).hasClass('disabled')) {
         return false;
     }
@@ -933,7 +923,7 @@ Mautic.ajaxifyLink = function (el, event, extraData = {}) {
     //give an ajaxified link the option of not displaying the global loading bar
     var showLoadingBar = (mQuery(el).attr('data-hide-loadingbar')) ? false : true;
 
-    Mautic.loadContent(route, link, method, target, showLoadingBar, undefined, extraData);
+    Mautic.loadContent(route, link, method, target, showLoadingBar);
 };
 
 /**
@@ -943,36 +933,35 @@ Mautic.ajaxifyLink = function (el, event, extraData = {}) {
  */
 Mautic.activateChosenSelect = function(el, ignoreGlobal, jQueryVariant) {
     var mQuery = (typeof jQueryVariant != 'undefined') ? jQueryVariant : window.mQuery;
-    const $select = mQuery(el);
-    if ($select.parents('.no-chosen').length && !ignoreGlobal) {
+    if (mQuery(el).parents('.no-chosen').length && !ignoreGlobal) {
         // Globally ignored chosens because they are handled manually due to hidden elements, etc
         return;
     }
 
-    var noResultsText = $select.data('no-results-text');
+    var noResultsText = mQuery(el).data('no-results-text');
     if (!noResultsText) {
         noResultsText = mauticLang['chosenNoResults'];
     }
 
-    var isLookup = $select.attr('data-chosen-lookup');
+    var isLookup = mQuery(el).attr('data-chosen-lookup');
 
     if (isLookup) {
-        if ($select.attr('data-new-route')) {
+        if (mQuery(el).attr('data-new-route')) {
             // Register method to initiate new
-            $select.on('change', function () {
-                var url = $select.attr('data-new-route');
+            mQuery(el).on('change', function () {
+                var url = mQuery(el).attr('data-new-route');
                 // If the element is already in a modal then use a popup
-                if ($select.val() == 'new' && ($select.attr('data-popup') == "true" || $select.closest('.modal').length > 0)) {
+                if (mQuery(el).val() == 'new' && (mQuery(el).attr('data-popup') == "true" || mQuery(el).closest('.modal').length > 0)) {
                     var queryGlue = url.indexOf('?') >= 0 ? '&' : '?';
                     // De-select the new select option
-                    $select.find('option[value="new"]').prop('selected', false);
-                    $select.trigger('chosen:updated');
+                    mQuery(el).find('option[value="new"]').prop('selected', false);
+                    mQuery(el).trigger('chosen:updated');
 
                     Mautic.loadNewWindow({
-                        "windowUrl": url + queryGlue + "contentOnly=1&updateSelect=" + $select.attr('id')
+                        "windowUrl": url + queryGlue + "contentOnly=1&updateSelect=" + mQuery(el).attr('id')
                     });
                 } else {
-                    Mautic.loadAjaxModalBySelectValue(this, 'new', url, $select.attr('data-header'));
+                    Mautic.loadAjaxModalBySelectValue(this, 'new', url, mQuery(el).attr('data-header'));
                 }
             });
         }
@@ -984,45 +973,33 @@ Mautic.activateChosenSelect = function(el, ignoreGlobal, jQueryVariant) {
             singlePlaceholder = mauticLang['chosenChooseOne'];
     }
 
-    if (typeof $select.data('chosen-placeholder') !== 'undefined') {
-        multiPlaceholder = singlePlaceholder = $select.data('chosen-placeholder');
+    if (typeof mQuery(el).data('chosen-placeholder') !== 'undefined') {
+        multiPlaceholder = singlePlaceholder = mQuery(el).data('chosen-placeholder');
     }
 
-    const hideResultsOnSelect = !$select.attr('data-chosen-keep-results-on-select');
-
-    $select.chosen({
+    mQuery(el).chosen({
         placeholder_text_multiple: multiPlaceholder,
         placeholder_text_single: singlePlaceholder,
         no_results_text: noResultsText,
         width: "100%",
         allow_single_deselect: true,
         include_group_label_in_selected: true,
-        search_contains: true,
-        hide_results_on_select: hideResultsOnSelect,
+        search_contains: true
     });
 
     if (isLookup) {
-        const searchTerm = $select.attr('data-model');
-        const minTermLength = $select.attr('data-chosen-min-term-length');
+        var searchTerm = mQuery(el).attr('data-model');
 
         if (searchTerm) {
-            $select.ajaxChosen({
+            mQuery(el).ajaxChosen({
                 type: 'GET',
-                url: mauticAjaxUrl + '?action=' + $select.attr('data-chosen-lookup'),
+                url: mauticAjaxUrl + '?action=' + mQuery(el).attr('data-chosen-lookup'),
                 dataType: 'json',
                 afterTypeDelay: 2,
-                minTermLength: minTermLength ? minTermLength : 2,
+                minTermLength: 2,
                 jsonTermKey: searchTerm,
                 keepTypingMsg: "Keep typing...",
                 lookingForMsg: "Looking for"
-            }, function (data) {
-                const results = [];
-
-                mQuery.each(data, function (i, value) {
-                    results.push(typeof value === 'object' ? value : {value: value, text: value});
-                });
-
-                return results;
             });
         }
     }
@@ -1170,7 +1147,10 @@ Mautic.activateMultiSelect = function(el) {
             if (isSortable) {
                 mQuery(el).parent('.choice-wrapper').find('.ms-selection').first().sortable({
                     items: '.ms-elem-selection',
-                    helper: 'clone',
+                    helper: function (e, ui) {
+                        ui.width(mQuery(el).width());
+                        return ui;
+                    },
                     axis: 'y',
                     scroll: false,
                     update: function(event, ui) {
@@ -1715,28 +1695,11 @@ Mautic.initiateFileDownload = function (link) {
         return;
     }
 
-    // For direct downloads, use iframe with response checking
-    const iframe = mQuery("<iframe/>")
-        .attr({
-            src: link,
-            style: "visibility:hidden;display:none"
-        })
-        .appendTo(mQuery('body'));
-
-    iframe.on('load', function() {
-        try {
-            const iframeContent = iframe.contents().text();
-            const response = JSON.parse(iframeContent);
-
-            // If we get here, it's JSON error response
-            if (response.message) {
-                const flashMessage = Mautic.addErrorFlashMessage(response.message);
-                Mautic.setFlashes(flashMessage);
-            }
-        } catch (e) {
-            // If JSON.parse fails, it means we got a file download - this is expected
-        }
-    });
+    //initialize download links
+    mQuery("<iframe/>").attr({
+        src: link,
+        style: "visibility:hidden;display:none"
+    }).appendTo(mQuery('body'));
 };
 
 Mautic.processCsvContactExport = function (route) {
@@ -1759,29 +1722,10 @@ Mautic.processCsvContactExport = function (route) {
 };
 
 /**
- * Copies text to the clipboard.
- *
- * @param {string} text
- */
-Mautic.copyToClipboard = function (text) {
-    const textArea = document.createElement('textarea');
-    textArea.innerHTML = text;
-    const decodedText = textArea.value || textArea.innerText;
-
-    navigator.clipboard.writeText(decodedText).then(function () {
-        const message = Mautic.translate('mautic.core.notice.copiedtoclipboard');
-        const flashMessage = Mautic.addInfoFlashMessage(message);
-        Mautic.setFlashes(flashMessage);
-    }).catch(function (err) {
-        console.error('Clipboard write error:', err);
-        const message = Mautic.translate('mautic.core.error.copyfailed');
-        const flashMessage = Mautic.addErrorFlashMessage(message);
-        Mautic.setFlashes(flashMessage);
-    });
-};
-
-/**
- * Quick filters for list views
+ * Quick Filters
+ * This module handles the quick filtering functionality in Mautic's list views.
+ * Includes initialization, toggling, applying, and resetting.
+ * @namespace Mautic
  */
 
 /**

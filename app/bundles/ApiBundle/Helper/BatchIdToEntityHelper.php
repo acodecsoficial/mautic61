@@ -2,8 +2,6 @@
 
 namespace Mautic\ApiBundle\Helper;
 
-use Mautic\CoreBundle\Helper\CsvHelper;
-
 class BatchIdToEntityHelper
 {
     /**
@@ -76,15 +74,6 @@ class BatchIdToEntityHelper
         $orderedEntities = [];
         foreach ($this->ids as $key => $id) {
             if (!isset($entitiesKeyedById[$id])) {
-                $hasPreviousId = array_filter(
-                    $entities,
-                    fn ($entity) => $id == $entity->getPreviousId()
-                );
-
-                if ($hasPreviousId) {
-                    $orderedEntities[$key] = array_shift($hasPreviousId);
-                }
-
                 continue;
             }
 
@@ -124,7 +113,7 @@ class BatchIdToEntityHelper
 
         // ['ids' => '1,2,3'] OR ['ids' => '1']
         if (str_contains($ids, ',') || is_numeric($ids)) {
-            $this->ids           = CsvHelper::strGetCsv($ids);
+            $this->ids           = str_getcsv($ids);
             $this->originalKeys  = array_keys($this->ids);
             $this->isAssociative = false;
 

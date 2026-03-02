@@ -6,7 +6,6 @@ namespace Mautic\Migrations;
 
 use Doctrine\DBAL\Schema\Schema;
 use Mautic\CoreBundle\Doctrine\AbstractMauticMigration;
-use Mautic\CoreBundle\Helper\PathsHelper;
 
 /**
  * Move config files that contain local config to a folder outside the application data.
@@ -27,7 +26,7 @@ final class Versionzz20230929183000 extends AbstractMauticMigration
 
     public function up(Schema $schema): void
     {
-        $pathsHelper = $this->container->get(PathsHelper::class);
+        $pathsHelper = $this->container->get('mautic.helper.paths');
 
         $appConfigDir   = $pathsHelper->getRootPath().'/app/config';
         $localConfigDir = $pathsHelper->getVendorRootPath().'/config';
@@ -44,7 +43,7 @@ final class Versionzz20230929183000 extends AbstractMauticMigration
      */
     public function getConfigDirs(): array
     {
-        $pathsHelper = $this->container->get(PathsHelper::class);
+        $pathsHelper = $this->container->get('mautic.helper.paths');
 
         $appConfigDir   = $pathsHelper->getRootPath().'/app/config';
         $localConfigDir = $pathsHelper->getVendorRootPath().'/config';

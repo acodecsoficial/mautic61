@@ -143,7 +143,6 @@ class ReportGeneratorEvent extends AbstractReportEvent
             || $this->usesColumnWithPrefix(self::COMPANY_PREFIX)
             || $this->usesColumn('cmp.name')
             || $this->usesColumn('clel.campaign_id')
-            || $this->usesColumn('dnc_preferences')
         ) {
             $queryBuilder->leftJoin($prefix, MAUTIC_TABLE_PREFIX.'leads', $leadPrefix, $leadPrefix.'.id = '.$prefix.'.lead_id');
         }

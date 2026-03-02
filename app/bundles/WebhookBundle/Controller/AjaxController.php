@@ -21,8 +21,6 @@ class AjaxController extends CommonAjaxController
             return $this->createErrorResponse(
                 'mautic.webhook.error.private_address'
             );
-        } catch (\InvalidArgumentException $e) {
-            return $this->createErrorResponse($e->getMessage());
         } catch (\Exception) {
             return $this->createErrorResponse(
                 'mautic.webhook.label.warning'
@@ -33,21 +31,17 @@ class AjaxController extends CommonAjaxController
     private function processWebhookTest(Request $request, Client $client, PathsHelper $pathsHelper): JsonResponse
     {
         $url = $this->validateUrl($request);
-
         if (!$url) {
-            throw new \InvalidArgumentException('mautic.webhook.label.no.url');
+            return $this->createErrorResponse('mautic.webhook.label.no.url');
         }
 
-        $selectedTypes = InputHelper::cleanArray($request->request->all()['types'] ?? []);
+        $selectedTypes        = InputHelper::cleanArray($request->request->all()['types']) ?? [];
+        $payloadPaths         = $this->getPayloadPaths($selectedTypes, $pathsHelper);
+        $payload              = $this->loadPayloads($payloadPaths);
+        $payload['timestamp'] = (new \DateTimeImmutable())->format('c');
+        $secret               = InputHelper::string($request->request->get('secret'));
 
-        if (!$selectedTypes) {
-            throw new \InvalidArgumentException('mautic.webhook.label.no.events');
-        }
-
-        $payloadPaths = $this->getPayloadPaths($selectedTypes, $pathsHelper);
-        $payload      = $this->loadPayloads($payloadPaths);
-        $secret       = InputHelper::string($request->request->get('secret'));
-        $response     = $client->post($url, $payload, $secret);
+        $response = $client->post($url, $payload, $secret);
 
         return $this->createResponseFromStatusCode($response->getStatusCode());
     }

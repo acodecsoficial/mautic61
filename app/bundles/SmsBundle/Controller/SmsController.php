@@ -2,7 +2,6 @@
 
 namespace Mautic\SmsBundle\Controller;
 
-use Doctrine\Common\Collections\Collection;
 use Mautic\CoreBundle\Controller\FormController;
 use Mautic\CoreBundle\Factory\PageHelperFactoryInterface;
 use Mautic\CoreBundle\Form\Type\DateRangeType;
@@ -74,9 +73,6 @@ class SmsController extends FormController
                     'value'  => $this->user->getId(),
                 ];
         }
-
-        // Not to include translations
-        $filter['force'][] = ['column' => 'e.translationParent', 'expr' => 'isNull'];
 
         $orderBy    = $session->get('mautic.sms.orderby', 'e.name');
         $orderByDir = $session->get('mautic.sms.orderbydir', $this->getDefaultOrderDirection());
@@ -200,13 +196,6 @@ class SmsController extends FormController
         // Get click through stats
         $trackableLinks = $model->getSmsClickStats($sms->getId());
 
-        $translations = $sms->getTranslations();
-        if ($translations instanceof Collection) {
-            $translations = $translations->toArray();
-        }
-
-        [$translationParent, $translationChildren] = $translations;
-
         return $this->delegateView([
             'returnUrl'      => $this->generateUrl('mautic_sms_action', ['objectAction' => 'view', 'objectId' => $sms->getId()]),
             'viewParameters' => [
@@ -236,10 +225,6 @@ class SmsController extends FormController
                     ]
                 )->getContent(),
                 'dateRangeForm' => $dateRangeForm->createView(),
-                'translations'  => [
-                    'parent'   => $translationParent,
-                    'children' => $translationChildren,
-                ],
             ],
             'contentTemplate' => '@MauticSms/Sms/details.html.twig',
             'passthroughVars' => [

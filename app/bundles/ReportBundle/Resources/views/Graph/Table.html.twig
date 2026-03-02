@@ -32,10 +32,10 @@
                                             </td>
                                         {% elseif 'id' != cellName %}
                                             <td>
-                                                {% if cell is string %}
-                                                    {{ assetMakeLinks(cell) }}
-                                                {% else %}
+                                                {% if cell is numeric %}
                                                     {{ cell }}
+                                                {% else %}
+                                                    {{ assetMakeLinks(cell) }}
                                                 {% endif %}
                                             </td>
                                         {% endif %}

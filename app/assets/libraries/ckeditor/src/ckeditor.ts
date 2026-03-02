@@ -88,8 +88,4 @@ export default class ClassicEditor extends ClassicEditorBase {
         TableToolbar,
         TextTransformation
     ];
-
-    public static override defaultConfig = {
-        licenseKey: 'GPL'
-    };
 }

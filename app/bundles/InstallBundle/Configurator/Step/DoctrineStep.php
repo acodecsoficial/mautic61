@@ -72,7 +72,7 @@ class DoctrineStep implements StepInterface
      */
     public $backup_prefix = 'bak_';
 
-    public ?string $server_version = null;
+    public ?string $server_version;
 
     public function __construct(Configurator $configurator)
     {

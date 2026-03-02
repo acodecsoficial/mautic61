@@ -173,34 +173,30 @@ abstract class AbstractChart
     {
         switch ($this->unit) {
             case 's':
-                $value  = (int) $this->dateTo->diff($this->dateFrom)->format('%s');
-                $amount = $value + 1;
+                $amount = $this->dateTo->diff($this->dateFrom)->format('%s');
+                ++$amount;
                 break;
             case 'i':
-                $value  = (int) $this->dateTo->diff($this->dateFrom)->format('%i');
-                $amount = $value + 1;
+                $amount = $this->dateTo->diff($this->dateFrom)->format('%i');
+                ++$amount;
                 break;
             case 'd':
-                $value  = (int) $this->dateTo->diff($this->dateFrom)->format('%a');
-                $amount = $value + 1;
+                $amount = ($this->dateTo->diff($this->dateFrom)->format('%a') + 1);
                 break;
             case 'W':
-                $dayAmount = (int) $this->dateTo->diff($this->dateFrom)->format('%a');
-                $amount    = (int) (ceil($dayAmount / 7) + 1);
+                $dayAmount = $this->dateTo->diff($this->dateFrom)->format('%a');
+                $amount    = (ceil($dayAmount / 7) + 1);
                 break;
             case 'm':
-                $dateDiff = $this->dateTo->diff($this->dateFrom);
-                $years    = (int) $dateDiff->format('%y');
-                $months   = (int) $dateDiff->format('%m');
-                $amount   = $years * 12 + $months;
+                $amount = $this->dateTo->diff($this->dateFrom)->format('%y') * 12 + $this->dateTo->diff($this->dateFrom)->format('%m');
 
                 // Add 1 month if there are some days left
-                if ((int) $dateDiff->format('%d') > 0) {
+                if ($this->dateTo->diff($this->dateFrom)->format('%d') > 0) {
                     ++$amount;
                 }
 
                 // Add 1 month if count of days are greater or equal than in date to
-                if ((int) $this->dateFrom->format('d') >= (int) $this->dateTo->format('d')) {
+                if ($this->dateFrom->format('d') >= $this->dateTo->format('d')) {
                     ++$amount;
                 }
                 break;
@@ -210,8 +206,7 @@ abstract class AbstractChart
                 ++$amount;
                 break;
             default:
-                $value  = (int) $this->dateTo->diff($this->dateFrom)->format('%'.$this->unit);
-                $amount = $value + 1;
+                $amount = ($this->dateTo->diff($this->dateFrom)->format('%'.$this->unit) + 1);
                 break;
         }
 

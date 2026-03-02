@@ -12,11 +12,6 @@ final class ImportProcessEvent extends CommonEvent
 {
     private ?bool $wasMerged = null;
 
-    /**
-     * @var array<string>
-     */
-    private array $warnings = [];
-
     public function __construct(
         public Import $import,
         public LeadEventLog $eventLog,
@@ -44,18 +39,5 @@ final class ImportProcessEvent extends CommonEvent
     public function importIsForObject(string $object): bool
     {
         return $this->import->getObject() === $object;
-    }
-
-    /**
-     * @return array<string>
-     */
-    public function getWarnings(): array
-    {
-        return $this->warnings;
-    }
-
-    public function addWarning(string $warning): void
-    {
-        $this->warnings[] = $warning;
     }
 }

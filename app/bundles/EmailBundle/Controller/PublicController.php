@@ -116,7 +116,7 @@ class PublicController extends CommonFormController
      * @throws \Exception
      * @throws \Mautic\CoreBundle\Exception\FileNotFoundException
      */
-    public function unsubscribeAction(Request $request, ContactTracker $contactTracker, EmailModel $model, LeadModel $leadModel, FormModel $formModel, PageModel $pageModel, MailHashHelper $mailHash, ThemeHelper $themeHelper, $idHash, ?string $urlEmail = null, ?string $secretHash = null)
+    public function unsubscribeAction(Request $request, ContactTracker $contactTracker, EmailModel $model, LeadModel $leadModel, FormModel $formModel, PageModel $pageModel, MailHashHelper $mailHash, ThemeHelper $themeHelper, $idHash, string $urlEmail = null, string $secretHash = null)
     {
         $stat                   = $model->getEmailStatus($idHash);
         $message                = '';
@@ -268,11 +268,25 @@ class PublicController extends CommonFormController
                         );
 
                         $event = new PageDisplayEvent($html, $prefCenter, $eventParameters);
+
                         $this->dispatcher->dispatch($event, PageEvents::PAGE_ON_DISPLAY);
 
                         $html = $event->getContent();
-                        $session->remove($successSessionName);
 
+                        if (!$session->has($successSessionName)) {
+                            $successMessageData       = ['class="pref-successmessage"'];
+                            $successMessageDataHidden = [];
+                            foreach ($successMessageData as $successMessageData) {
+                                $successMessageDataHidden[] = $successMessageData.' style=display:none';
+                            }
+                            $html = str_replace(
+                                $successMessageData,
+                                $successMessageDataHidden,
+                                $html
+                            );
+                        } else {
+                            $session->remove($successSessionName);
+                        }
                         $html = preg_replace(
                             '/'.BuilderSubscriber::identifierToken.'/',
                             $lead->getPrimaryIdentifier(),
@@ -459,7 +473,7 @@ class PublicController extends CommonFormController
         LeadModel $leadModel,
         FakeContactHelper $fakeLeadHelper,
         string $objectId,
-        ?string $objectType = null,
+        string $objectType = null,
     ) {
         $contactId   = (int) $request->query->get('contactId');
         $emailEntity = $model->getEntity($objectId);
@@ -671,7 +685,10 @@ class PublicController extends CommonFormController
         }
     }
 
-    public function pluginTrackingGifAction(Request $request, IntegrationHelper $integrationHelper, MailHelper $mailer, LoggerInterface $mauticLogger, $integration): Response
+    /**
+     * @return Response
+     */
+    public function pluginTrackingGifAction(Request $request, IntegrationHelper $integrationHelper, MailHelper $mailer, LoggerInterface $mauticLogger, $integration)
     {
         $this->doTracking($request, $integrationHelper, $mailer, $mauticLogger, $integration);
 

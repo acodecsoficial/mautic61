@@ -22,7 +22,7 @@ class NotificationRepository extends CommonRepository
             ->createQueryBuilder()
             ->select('e')
             ->from(Notification::class, 'e', 'e.id');
-        if (empty($args['iterable_mode'])) {
+        if (empty($args['iterator_mode']) && empty($args['iterable_mode'])) {
             $q->leftJoin('e.category', 'c');
         }
 
@@ -200,12 +200,15 @@ class NotificationRepository extends CommonRepository
     }
 
     /**
-     * @param string|array<mixed> $search
-     * @param array<mixed>        $options
+     * @param string $search
+     * @param int    $limit
+     * @param int    $start
+     * @param bool   $viewOther
+     * @param string $notificationType
      *
-     * @return array<int, array<string, int|string>>
+     * @return array
      */
-    public function getMobileNotificationList(string|array $search = '', int $limit = 10, int $start = 0, bool $viewOther = false, array $options = []): array
+    public function getMobileNotificationList($search = '', $limit = 10, $start = 0, $viewOther = false, $notificationType = null)
     {
         $q = $this->createQueryBuilder('e');
         $q->select('partial e.{id, name, language}');
@@ -226,18 +229,10 @@ class NotificationRepository extends CommonRepository
                 ->setParameter('id', $this->currentUser->getId());
         }
 
-        if (!empty($options['notification_type'])) {
+        if (!empty($notificationType)) {
             $q->andWhere(
-                $q->expr()->eq('e.notificationType', $q->expr()->literal($options['notification_type']))
+                $q->expr()->eq('e.notificationType', $q->expr()->literal($notificationType))
             );
-        }
-
-        if (!empty($options['top_level']) && 'translation' === $options['top_level']) {
-            $q->andWhere($q->expr()->isNull('e.translationParent'));
-        }
-
-        if (!empty($options['ignore_ids'])) {
-            $q->andWhere($q->expr()->notIn('e.id', $options['ignore_ids']));
         }
 
         $q->andWhere('e.mobile = 1');

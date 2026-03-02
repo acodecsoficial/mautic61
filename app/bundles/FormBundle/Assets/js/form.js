@@ -94,6 +94,10 @@ Mautic.formOnLoad = function (container) {
         });
     }
 
+    if (mQuery('#mauticform_formType').length && mQuery('#mauticform_formType').val() == '') {
+        mQuery('body').addClass('noscroll');
+    }
+
     Mautic.initHideItemButton('#mauticforms_fields');
     Mautic.initHideItemButton('#mauticforms_actions');
 };
@@ -143,14 +147,6 @@ Mautic.fetchFieldsOnObjectChange = function() {
             fieldSelect.removeAttr('disable');
         }
     });
-};
-
-Mautic.formResultBatchSubmit = function () {
-    if (!mQuery('#lead_batch_ids').val()) {
-        return false;
-    }
-
-    return mQuery('#lead_batch_add').val() || mQuery('#lead_batch_remove').val();
 };
 
 Mautic.updateFormFields = function () {
@@ -355,7 +351,7 @@ Mautic.formActionOnLoad = function (container, response) {
 Mautic.initHideItemButton = function(container) {
     mQuery(container).find('[data-hide-panel]').click(function(e) {
         e.preventDefault();
-        mQuery(this).closest('.form-field-wrapper, .mauticform-row').hide('fast');
+        mQuery(this).closest('.form-field-wrapper,.form-field-wrapper').hide('fast');
     });
 }
 
@@ -371,12 +367,23 @@ Mautic.onPostSubmitActionChange = function(value) {
     mQuery('#mauticform_postActionProperty').parent().removeClass('has-error');
 };
 
-/**
- * @deprecated since Mautic 7.1, to be removed in 8.0 with no replacement.
- * @param formType
- */
 Mautic.selectFormType = function(formType) {
+    if (formType == 'standalone') {
+        mQuery('option.action-standalone-only').removeClass('hide');
+        mQuery('.page-header h3').text(mauticLang.newStandaloneForm);
+    } else {
+        mQuery('option.action-standalone-only').addClass('hide');
+        mQuery('.page-header h3').text(mauticLang.newCampaignForm);
+    }
+
+    mQuery('.available-actions select').trigger('chosen:updated');
+
     mQuery('#mauticform_formType').val(formType);
+
+    mQuery('body').removeClass('noscroll');
+
+    mQuery('.form-type-modal').remove();
+    mQuery('.form-type-modal-backdrop').remove();
 };
 
 /**

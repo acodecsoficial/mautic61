@@ -125,7 +125,7 @@ class CampaignSubscriber implements EventSubscriberInterface
 
         if ($dwc instanceof DynamicContent) {
             // Use translation if available
-            [$ignore, $dwc] = $this->dynamicContentModel->getTranslatedEntity($dwc, $lead);
+            list($ignore, $dwc) = $this->dynamicContentModel->getTranslatedEntity($dwc, $lead);
             \assert($dwc instanceof DynamicContent);
 
             if ($slot) {

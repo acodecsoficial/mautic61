@@ -20,7 +20,6 @@ use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\FormView;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
@@ -90,7 +89,7 @@ abstract class AbstractStandardFormController extends AbstractFormController
     /**
      * Deletes a group of entities.
      *
-     * @return JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse
+     * @return \Symfony\Component\HttpFoundation\JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse
      */
     protected function batchDeleteStandard(Request $request)
     {
@@ -226,7 +225,7 @@ abstract class AbstractStandardFormController extends AbstractFormController
     /**
      * Clone an entity.
      *
-     * @return array|JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse
+     * @return array|\Symfony\Component\HttpFoundation\JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse
      */
     protected function cloneStandard(Request $request, $objectId)
     {
@@ -257,7 +256,7 @@ abstract class AbstractStandardFormController extends AbstractFormController
      *
      * @param int $objectId
      *
-     * @return JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse
+     * @return \Symfony\Component\HttpFoundation\JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse
      */
     protected function deleteStandard(Request $request, $objectId)
     {
@@ -319,7 +318,7 @@ abstract class AbstractStandardFormController extends AbstractFormController
     /**
      * @param bool $ignorePost
      *
-     * @return JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse|Response
+     * @return \Symfony\Component\HttpFoundation\JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse|Response
      *
      * @throws \Exception
      */
@@ -905,7 +904,7 @@ abstract class AbstractStandardFormController extends AbstractFormController
     }
 
     /**
-     * @return array|JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse|Response
+     * @return array|\Symfony\Component\HttpFoundation\JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse|Response
      *
      * @throws \Exception
      */
@@ -1042,7 +1041,7 @@ abstract class AbstractStandardFormController extends AbstractFormController
      * @param string|null $listPage
      * @param string      $itemName
      *
-     * @return array|JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse|Response
+     * @return array|\Symfony\Component\HttpFoundation\JsonResponse|\Symfony\Component\HttpFoundation\RedirectResponse|Response
      */
     protected function viewStandard(Request $request, $objectId, $logObject = null, $logBundle = null, $listPage = null, $itemName = 'item')
     {
@@ -1095,7 +1094,7 @@ abstract class AbstractStandardFormController extends AbstractFormController
             'viewParameters' => [
                 $itemName     => $entity,
                 'logs'        => $logs,
-                'tmpl'        => $request->isXmlHttpRequest() ? $request->get('tmpl', 'details') : 'details',
+                'tmpl'        => $request->isXmlHttpRequest() ? $request->get('tmpl', 'index') : 'index',
                 'permissions' => $this->security->isGranted(
                     [
                         $this->getPermissionBase().':view',
@@ -1116,7 +1115,6 @@ abstract class AbstractStandardFormController extends AbstractFormController
                     null,
                     true
                 ),
-                'enableExportPermission' => $this->security->isAdmin() || $this->security->isGranted($entity::ENTITY_NAME.':export:enable', 'MATCH_ONE'),
             ],
             'contentTemplate' => $this->getTemplateName('details.html.twig'),
             'passthroughVars' => [
@@ -1132,7 +1130,7 @@ abstract class AbstractStandardFormController extends AbstractFormController
         );
     }
 
-    protected function getDataForExport(AbstractCommonModel $model, array $args, ?callable $resultsCallback = null, ?int $start = 0)
+    protected function getDataForExport(AbstractCommonModel $model, array $args, callable $resultsCallback = null, ?int $start = 0)
     {
         return parent::getDataForExport($model, $args, $resultsCallback, $start);
     }
@@ -1183,22 +1181,5 @@ abstract class AbstractStandardFormController extends AbstractFormController
         $entity->markForVersionIncrement();
 
         return true;
-    }
-
-    public function returnOptimizedResponse(Request $request, FormInterface $form, string $link, string $content, string $route, array $data = []): ?JsonResponse
-    {
-        if ($request->request->get('is_optimized_response', false)) {
-            return new JsonResponse(
-                $data + [
-                    'activeLink'      => $link,
-                    'mauticContent'   => $content,
-                    'route'           => $route,
-                    'validationError' => $this->getFormErrorForBuilder($form),
-                    'flashes'         => $this->getFlashContent(),
-                ]
-            );
-        }
-
-        return null;
     }
 }

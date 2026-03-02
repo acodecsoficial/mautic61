@@ -10,7 +10,6 @@ use Mautic\CoreBundle\Form\Type\PublishDownDateType;
 use Mautic\CoreBundle\Form\Type\PublishUpDateType;
 use Mautic\CoreBundle\Form\Type\YesNoButtonGroupType;
 use Mautic\CoreBundle\Security\Permissions\CorePermissions;
-use Mautic\ProjectBundle\Form\Type\ProjectType;
 use Mautic\StageBundle\Entity\Stage;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\NumberType;
@@ -84,8 +83,7 @@ class StageType extends AbstractType
         $builder->add('publishUp', PublishUpDateType::class);
         $builder->add('publishDown', PublishDownDateType::class);
 
-        $builder->add('projects', ProjectType::class);
-
+        // add category
         $builder->add(
             'category',
             CategoryListType::class,

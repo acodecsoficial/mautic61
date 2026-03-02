@@ -8,7 +8,6 @@ use Doctrine\ORM\QueryBuilder;
 use Mautic\CoreBundle\Entity\CommonRepository;
 use Mautic\LeadBundle\Event\CompanyBuildSearchEvent;
 use Mautic\LeadBundle\LeadEvents;
-use Mautic\ProjectBundle\Entity\ProjectRepositoryTrait;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -17,7 +16,6 @@ use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 class CompanyRepository extends CommonRepository implements CustomFieldRepositoryInterface
 {
     use CustomFieldRepositoryTrait;
-    use ProjectRepositoryTrait;
 
     /**
      * @var array
@@ -170,20 +168,6 @@ class CompanyRepository extends CommonRepository implements CustomFieldRepositor
         $returnParameter         = true;
         $command                 = $filter->command;
 
-        if (in_array($command, [
-            $this->translator->trans('mautic.project.searchcommand.name'),
-            $this->translator->trans('mautic.project.searchcommand.name', [], null, 'en_US'),
-        ])) {
-            return $this->handleProjectFilter(
-                $this->_em->getConnection()->createQueryBuilder(),
-                'company_id',
-                'company_projects_xref',
-                $this->getTableAlias(),
-                $filter->string,
-                $filter->not
-            );
-        }
-
         if (in_array($command, $this->availableSearchFields)) {
             $expr = $q->expr()->like($this->getTableAlias().".$command", ":$unique");
         }
@@ -215,7 +199,7 @@ class CompanyRepository extends CommonRepository implements CustomFieldRepositor
      */
     public function getSearchCommands(): array
     {
-        $commands = array_merge(['mautic.project.searchcommand.name'], $this->getStandardSearchCommands());
+        $commands = $this->getStandardSearchCommands();
         if (!empty($this->availableSearchFields)) {
             $commands = array_merge($commands, $this->availableSearchFields);
         }
@@ -418,7 +402,7 @@ class CompanyRepository extends CommonRepository implements CustomFieldRepositor
      * @param string $valueColumn
      */
     public function getAjaxSimpleList(
-        ?CompositeExpression $expr = null,
+        CompositeExpression $expr = null,
         array $parameters = [],
         $labelColumn = null,
         $valueColumn = 'id',
@@ -446,7 +430,18 @@ class CompanyRepository extends CommonRepository implements CustomFieldRepositor
             }
         }
 
-        $labelExpression = $prefix.' companyname as label';
+        if (!(isset($parameters['onlyNames']) && $parameters['onlyNames'])) {
+            $labelExpression = '
+            case
+            when (comp.companycountry is not null and comp.companycity is not null) then concat(comp.companyname, \' <small>\', companycity,\', \', companycountry, \'</small>\')
+            when (comp.companycountry is not null) then concat(comp.companyname, \' <small>\', comp.companycountry, \'</small>\')
+            when (comp.companycity is not null) then concat(comp.companyname, \' <small>\', comp.companycity, \'</small>\')
+            else comp.companyname
+            end
+            as label';
+        } else {
+            $labelExpression = $prefix.' companyname as label';
+        }
 
         $q->select($prefix.$valueColumn.' as value, '.$labelExpression)
             ->from($tableName, $alias)
@@ -528,7 +523,7 @@ class CompanyRepository extends CommonRepository implements CustomFieldRepositor
     /**
      * @return Company[]
      */
-    public function getCompaniesByUniqueFields(array $uniqueFieldsWithData, ?int $companyId = null, ?int $limit = null): array
+    public function getCompaniesByUniqueFields(array $uniqueFieldsWithData, int $companyId = null, int $limit = null): array
     {
         $results = $this->getCompanyFieldsByUniqueFields($uniqueFieldsWithData, 'c.*', $companyId, $limit);
 

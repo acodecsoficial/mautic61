@@ -34,7 +34,7 @@ final class ReferenceResolver implements ReferenceResolverInterface
                     Contact::NAME,
                     $objectName
                 ),
-                self::class.':'.__FUNCTION__
+                __CLASS__.':'.__FUNCTION__
             );
 
             return;

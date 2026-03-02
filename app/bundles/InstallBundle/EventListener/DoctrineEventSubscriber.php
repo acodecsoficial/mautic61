@@ -2,15 +2,20 @@
 
 namespace Mautic\InstallBundle\EventListener;
 
-use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
+use Doctrine\Common\EventSubscriber;
 use Doctrine\ORM\Tools\Event\GenerateSchemaEventArgs;
-use Doctrine\ORM\Tools\ToolEvents;
 use Mautic\LeadBundle\Field\SchemaDefinition;
 use Mautic\LeadBundle\Model\FieldModel;
 
-#[AsDoctrineListener(ToolEvents::postGenerateSchema)]
-class DoctrineEventSubscriber
+class DoctrineEventSubscriber implements EventSubscriber
 {
+    public function getSubscribedEvents(): array
+    {
+        return [
+            'postGenerateSchema',
+        ];
+    }
+
     public function postGenerateSchema(GenerateSchemaEventArgs $args): void
     {
         $fieldGroups = [

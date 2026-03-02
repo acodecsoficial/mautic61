@@ -138,13 +138,6 @@ class AssetModel extends FormModel implements GlobalSearchInterface
         $download->setUtmSource($request->get('utm_source'));
         $download->setUtmTerm($request->get('utm_term'));
 
-        // Check if request is trackable (includes IP, bot, privacy signal, and prefetch checks)
-        if (!$this->ipLookupHelper->isRequestTrackable()) {
-            return;
-        }
-
-        $ipAddress = $this->ipLookupHelper->getIpAddress();
-
         // Download triggered by lead
         if (empty($systemEntry)) {
             // check for any clickthrough info
@@ -364,7 +357,7 @@ class AssetModel extends FormModel implements GlobalSearchInterface
     /**
      * @throws MethodNotAllowedHttpException
      */
-    protected function dispatchEvent($action, &$entity, $isNew = false, ?Event $event = null): ?Event
+    protected function dispatchEvent($action, &$entity, $isNew = false, Event $event = null): ?Event
     {
         if (!$entity instanceof Asset) {
             throw new MethodNotAllowedHttpException(['Asset']);
@@ -434,30 +427,21 @@ class AssetModel extends FormModel implements GlobalSearchInterface
     /**
      * Generate url for an asset.
      *
-     * @param array<string, mixed> $clickthrough
+     * @param Asset $entity
+     * @param bool  $absolute
+     * @param array $clickthrough
+     *
+     * @return string
      */
-    public function generateUrl(Asset $entity, bool $absolute = true, array $clickthrough = [], ?string $stream = null): string
+    public function generateUrl($entity, $absolute = true, $clickthrough = [])
     {
-        $entityId  = $entity->getId();
-        $alias     = $entity->getAlias();
-        $assetSlug = $entityId.':'.$alias;
+        $assetSlug = $entity->getId().':'.$entity->getAlias();
 
-        $routeParams = ['slug' => $assetSlug];
-        if (!is_null($stream)) {
-            $routeParams['stream'] = $stream;
-        }
+        $slugs = [
+            'slug' => $assetSlug,
+        ];
 
-        $referenceType = ($absolute) ? UrlGeneratorInterface::ABSOLUTE_URL : UrlGeneratorInterface::ABSOLUTE_PATH;
-        $url           = $this->router->generate('mautic_asset_download', $routeParams, $referenceType);
-
-        if (empty($clickthrough)) {
-            return $url;
-        }
-
-        $ct        = $this->encodeArrayForUrl($clickthrough);
-        $separator = (null !== parse_url($url, PHP_URL_QUERY)) ? '&' : '?';
-
-        return $url.$separator.'ct='.$ct;
+        return $this->buildUrl('mautic_asset_download', $slugs, $absolute, $clickthrough);
     }
 
     /**
@@ -618,7 +602,7 @@ class AssetModel extends FormModel implements GlobalSearchInterface
      * @param array $filters
      * @param array $options
      */
-    public function getAssetList($limit = 10, ?\DateTime $dateFrom = null, ?\DateTime $dateTo = null, $filters = [], $options = []): array
+    public function getAssetList($limit = 10, \DateTime $dateFrom = null, \DateTime $dateTo = null, $filters = [], $options = []): array
     {
         $q = $this->em->getConnection()->createQueryBuilder();
         $q->select('t.id, t.title as name, t.date_added, t.date_modified')

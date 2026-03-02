@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Mautic\LeadBundle\Controller;
 
 use Mautic\EmailBundle\Model\EmailModel;
@@ -100,7 +98,7 @@ trait FrequencyRuleTrait
     /**
      * @param bool $isPublic
      */
-    protected function getFrequencyRuleFormData(Lead $lead, ?array $allChannels = null, $leadChannels = null, $isPublic = false, $frequencyRules = null, $isPreferenceCenter = false): array
+    protected function getFrequencyRuleFormData(Lead $lead, array $allChannels = null, $leadChannels = null, $isPublic = false, $frequencyRules = null, $isPreferenceCenter = false): array
     {
         $data = [];
 
@@ -137,9 +135,9 @@ trait FrequencyRuleTrait
             }
         }
 
-        $data['global_categories'] = $frequencyRules['global_categories'] ?? $model->getSubscribedAndNewCategoryIds(
-            $lead, ['global', 'email']);
-
+        $data['global_categories'] = $frequencyRules['global_categories'] ?? $model->getLeadCategories(
+            $lead
+        );
         $this->leadLists    = $model->getLists($lead, false, false, $isPublic, $isPreferenceCenter);
         $data['lead_lists'] = [];
         foreach ($this->leadLists as $leadList) {

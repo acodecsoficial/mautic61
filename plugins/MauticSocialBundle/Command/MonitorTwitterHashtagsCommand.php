@@ -3,14 +3,19 @@
 namespace MauticPlugin\MauticSocialBundle\Command;
 
 use MauticPlugin\MauticSocialBundle\Entity\Monitoring;
-use Symfony\Component\Console\Attribute\AsCommand;
 
-#[AsCommand(
-    name: 'social:monitor:twitter:hashtags',
-    description: 'Looks at our monitoring records and finds hashtags'
-)]
 class MonitorTwitterHashtagsCommand extends MonitorTwitterBaseCommand
 {
+    /**
+     * Configure the command, set name and options.
+     */
+    protected function configure()
+    {
+        $this->setName('social:monitor:twitter:hashtags');
+
+        parent::configure();
+    }
+
     /**
      * Search for tweets by hashtag.
      *
@@ -47,4 +52,6 @@ class MonitorTwitterHashtagsCommand extends MonitorTwitterBaseCommand
     {
         return 'twitter';
     }
+
+    protected static $defaultDescription = 'Looks at our monitoring records and finds hashtags';
 }

@@ -45,9 +45,8 @@ return [
                 'controller' => 'Mautic\PageBundle\Controller\PublicController::redirectAction',
             ],
             'mautic_page_preview' => [
-                'path'       => '/page/preview/{id}/{objectType}',
+                'path'       => '/page/preview/{id}',
                 'controller' => 'Mautic\PageBundle\Controller\PublicController::previewAction',
-                'defaults'   => ['objectType' => null],
             ],
         ],
         'api' => [
@@ -89,15 +88,6 @@ return [
     ],
 
     'services' => [
-        'events' => [
-            'mautic.page.segment_tracking_subscriber' => [
-                'class'     => Mautic\PageBundle\EventListener\SegmentTrackingSubscriber::class,
-                'arguments' => [
-                    'mautic.helper.core_parameters',
-                    'mautic.lead.repository.lead_list',
-                ],
-            ],
-        ],
         'fixtures' => [
             'mautic.page.fixture.page_category' => [
                 'class'     => Mautic\PageBundle\DataFixtures\ORM\LoadPageCategoryData::class,
@@ -137,6 +127,7 @@ return [
         'google_analytics'                      => null,
         'track_contact_by_ip'                   => false,
         'track_by_fingerprint'                  => false,
+        'track_by_tracking_url'                 => false,
         'google_analytics_id'                   => null,
         'google_analytics_trackingpage_enabled' => false,
         'google_analytics_landingpage_enabled'  => false,
@@ -145,6 +136,5 @@ return [
         'facebook_pixel_trackingpage_enabled'   => false,
         'facebook_pixel_landingpage_enabled'    => false,
         'do_not_track_404_anonymous'            => false,
-        'append_segment_id_tracking_url'        => false,
     ],
 ];

@@ -198,7 +198,7 @@ class SchemaHelper
             throw new \Exception('Invalid database platform '.$platform.'. Mautic only supports MySQL and MariaDB!');
         }
 
-        if (version_compare($version, $minSupported, '<')) {
+        if (true !== version_compare($version, $minSupported, 'gt')) {
             throw new DatabaseVersionTooOldException($version);
         }
     }

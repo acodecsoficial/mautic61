@@ -19,7 +19,6 @@ use Mautic\CoreBundle\Cache\ResultCacheHelper;
 use Mautic\CoreBundle\Cache\ResultCacheOptions;
 use Mautic\CoreBundle\Doctrine\Paginator\SimplePaginator;
 use Mautic\CoreBundle\Event\GlobalSearchEvent;
-use Mautic\CoreBundle\Helper\CsvHelper;
 use Mautic\CoreBundle\Helper\DateTimeHelper;
 use Mautic\CoreBundle\Helper\InputHelper;
 use Mautic\CoreBundle\Helper\SearchStringHelper;
@@ -36,7 +35,7 @@ class CommonRepository extends ServiceEntityRepository
     /**
      * @phpstan-param class-string<T>|null $entityFQCN
      */
-    public function __construct(ManagerRegistry $registry, ?string $entityFQCN = null)
+    public function __construct(ManagerRegistry $registry, string $entityFQCN = null)
     {
         parent::__construct($registry, $entityFQCN ?? str_replace('Repository', '', static::class));
     }
@@ -138,10 +137,12 @@ class CommonRepository extends ServiceEntityRepository
     /**
      * @param class-string $className
      *
+     * @return mixed
+     *
      * @throws \Doctrine\ORM\Mapping\MappingException
      * @throws \Exception
      */
-    public function createFromArray($className, &$data): object
+    public function createFromArray($className, &$data)
     {
         $entity        = new $className();
         $meta          = $this->_em->getClassMetadata($className);
@@ -395,18 +396,23 @@ class CommonRepository extends ServiceEntityRepository
             return $query->toIterable([], $hydrationMode);
         }
 
-        if (empty($args['ignore_paginator'])) {
+        if (!empty($args['iterator_mode'])) {
+            // When you remove the following, please search for the "iterator_mode" in the project.
+            @\trigger_error('Using "iterator_mode" is deprecated. Use "iterable_mode" instead. Usage of "iterator_mode" will be removed in 6.0.', \E_USER_DEPRECATED);
+
+            return $query->iterate(null, $hydrationMode);
+        } elseif (empty($args['ignore_paginator'])) {
             if (!empty($args['use_simple_paginator'])) {
                 // FAST paginator that can handle only simple queries using no joins or ManyToOne joins.
                 return new SimplePaginator($query);
+            } else {
+                // SLOW paginator that can handle complex queries using oneToMany/ManyToMany joins.
+                return new Paginator($query, false);
             }
-
-            // SLOW paginator that can handle complex queries using oneToMany/ManyToMany joins.
-            return new Paginator($query, false);
+        } else {
+            // All results
+            return $query->getResult($hydrationMode);
         }
-
-        // All results
-        return $query->getResult($hydrationMode);
     }
 
     /**
@@ -601,7 +607,7 @@ class CommonRepository extends ServiceEntityRepository
      * @param int $start
      * @param int $limit
      */
-    public function getRows($start = 0, $limit = 100, array $order = [], array $where = [], ?array $select = null, array $allowedJoins = []): array
+    public function getRows($start = 0, $limit = 100, array $order = [], array $where = [], array $select = null, array $allowedJoins = []): array
     {
         $alias    = $this->getTableAlias();
         $metadata = $this->getClassMetadata();
@@ -686,7 +692,7 @@ class CommonRepository extends ServiceEntityRepository
      *
      * @return mixed[]
      */
-    public function getSimpleList(?CompositeExpression $expr = null, array $parameters = [], $labelColumn = null, $valueColumn = 'id', $extraColumns = null, $limit = 0): array
+    public function getSimpleList(CompositeExpression $expr = null, array $parameters = [], $labelColumn = null, $valueColumn = 'id', $extraColumns = null, $limit = 0): array
     {
         $q = $this->_em->getConnection()->createQueryBuilder();
 
@@ -841,13 +847,8 @@ class CommonRepository extends ServiceEntityRepository
         $set        = [];
         $update     = [];
         $hasId      = $metadata->containsForeignIdentifier;
-        $fieldNames = $metadata->getFieldNames();
 
-        if ($entity instanceof OptimisticLockInterface) {
-            $fieldNames = array_diff($fieldNames, [$entity->getVersionField()]);
-        }
-
-        foreach ($fieldNames as $fieldName) {
+        foreach ($metadata->getFieldNames() as $fieldName) {
             $value = $metadata->getFieldValue($entity, $fieldName);
             if ($metadata->isIdentifier($fieldName)) {
                 if ($value) {
@@ -1488,8 +1489,7 @@ class CommonRepository extends ServiceEntityRepository
                 if (!empty($filter['where'])) {
                     // build clauses from array
                     $this->buildWhereClauseFromArray($q, $filter['where']);
-                }
-                if (!empty($filter['criteria']) || !empty($filter['force'])) {
+                } elseif (!empty($filter['criteria']) || !empty($filter['force'])) {
                     $criteria = !empty($filter['criteria']) ? $filter['criteria'] : $filter['force'];
                     if (is_array($criteria)) {
                         // defined columns with keys of column, expr, value
@@ -1625,7 +1625,7 @@ class CommonRepository extends ServiceEntityRepository
                             break;
                         case 'in':
                         case 'notIn':
-                            $parsed = CsvHelper::strGetCsv(html_entity_decode($clause['val']), ',', '"');
+                            $parsed = str_getcsv(html_entity_decode($clause['val']), ',', '"');
 
                             $param = $this->generateRandomParameterName();
                             $arg   = count($parsed) > 1 ? $parsed : array_shift($parsed);
@@ -1751,7 +1751,7 @@ class CommonRepository extends ServiceEntityRepository
                         $f->strict       = true;
                         [$expr, $params] = $this->addCatchAllWhereClause($qb, $f);
                     }
-                } elseif ($f->string) {
+                } else {
                     [$expr, $params] = $this->addCatchAllWhereClause($qb, $f);
                 }
             }

@@ -14,11 +14,11 @@ trait TranslationModelTrait
     /**
      * Get the entity based on requested translation.
      *
-     * @param Lead|array{preferred_locale?: string} $lead
+     * @param Lead|array|null $lead
      *
-     * @return array{TranslationEntityInterface, TranslationEntityInterface}
+     * @return array{object, TranslationEntityInterface}
      */
-    public function getTranslatedEntity(TranslationEntityInterface $entity, Lead|array|null $lead = null, ?Request $request = null): array
+    public function getTranslatedEntity(TranslationEntityInterface $entity, $lead = null, Request $request = null): array
     {
         [$translationParent, $translationChildren] = $entity->getTranslations();
 
@@ -52,11 +52,9 @@ trait TranslationModelTrait
             $leadPreference = null;
             if ($lead) {
                 if ($lead instanceof Lead) {
-                    $leadPreference                = $lead->getPreferredLocale();
-                    $languageList[$leadPreference] = $leadPreference;
+                    $languageList[$leadPreference] = $lead->getPreferredLocale();
                 } elseif (is_array($lead) && isset($lead['preferred_locale'])) {
-                    $leadPreference                = $lead['preferred_locale'];
-                    $languageList[$leadPreference] = $leadPreference;
+                    $languageList[$leadPreference] = $lead['preferred_locale'];
                 }
             }
 
@@ -129,7 +127,10 @@ trait TranslationModelTrait
         }
     }
 
-    protected function getTranslationLocaleCore(string $locale): string
+    /**
+     * @return string
+     */
+    protected function getTranslationLocaleCore($locale)
     {
         if (str_contains($locale, '_')) {
             $locale = substr($locale, 0, 2);

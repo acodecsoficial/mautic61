@@ -20,16 +20,6 @@ class FieldAliasKeywordValidator extends ConstraintValidator
     public const RESTRICTED_ALIASES = [
         'contact_id',
         'company_id',
-        'notes',
-        'owner',
-        'id',
-        'ip',
-        'tags',
-        'dateAdded',
-        'dateModified',
-        'lastActive',
-        'createdByUser',
-        'modifiedByUser',
     ];
 
     public function __construct(

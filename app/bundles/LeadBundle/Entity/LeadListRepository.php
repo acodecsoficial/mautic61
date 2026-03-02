@@ -6,8 +6,6 @@ use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Query\QueryBuilder;
 use Doctrine\ORM\Query\ResultSetMapping;
 use Mautic\CoreBundle\Entity\CommonRepository;
-use Mautic\CoreBundle\Helper\DateTimeHelper;
-use Mautic\ProjectBundle\Entity\ProjectRepositoryTrait;
 use Mautic\UserBundle\Entity\User;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
@@ -20,7 +18,6 @@ class LeadListRepository extends CommonRepository
 
     use ExpressionHelperTrait;
     use RegexTrait;
-    use ProjectRepositoryTrait;
 
     /**
      * @var bool
@@ -49,17 +46,16 @@ class LeadListRepository extends CommonRepository
      */
     protected $companyTableSchema;
 
-    private function getSingleEntity(int $id, bool $ignoreDeleted = true): ?LeadList
+    /**
+     * @param int $id
+     */
+    public function getEntity($id = 0): ?LeadList
     {
         try {
-            $q = $this
-                ->createQueryBuilder('l');
-            $q->where('l.id = :listId');
-            if ($ignoreDeleted) {
-                $q->andWhere($q->expr()->isNull($this->getTableAlias().'.deleted'));
-            }
-
-            return $q->setParameter('listId', $id)
+            return $this
+                ->createQueryBuilder('l')
+                ->where('l.id = :listId')
+                ->setParameter('listId', $id)
                 ->getQuery()
                 ->getSingleResult();
         } catch (\Exception) {
@@ -68,38 +64,22 @@ class LeadListRepository extends CommonRepository
     }
 
     /**
-     * @param int $id
-     */
-    public function getEntity($id = 0): ?LeadList
-    {
-        return $this->getSingleEntity($id);
-    }
-
-    public function getSoftDeletedEntity(int $id): ?LeadList
-    {
-        return $this->getSingleEntity($id, false);
-    }
-
-    /**
      * Get a list of lists.
      *
+     * @param bool   $user
      * @param string $alias
      * @param string $id
-     * @param bool   $justPublished if false, returns all published and unpublished segments
      *
      * @return array
      */
-    public function getLists(?User $user = null, $alias = '', $id = '', bool $justPublished = true)
+    public function getLists(?User $user = null, $alias = '', $id = '')
     {
         $q = $this->getEntityManager()->createQueryBuilder()
             ->from(LeadList::class, 'l', 'l.id');
 
-        $q->select('partial l.{id, name, alias}');
-
-        if ($justPublished) {
-            $q->andWhere($q->expr()->eq('l.isPublished', ':true'))
-                ->setParameter('true', true, 'boolean');
-        }
+        $q->select('partial l.{id, name, alias}')
+            ->andWhere($q->expr()->eq('l.isPublished', ':true'))
+            ->setParameter('true', true, 'boolean');
 
         if ($user) {
             $q->andWhere($q->expr()->eq('l.isGlobal', ':true'));
@@ -117,8 +97,6 @@ class LeadListRepository extends CommonRepository
                 $q->expr()->neq('l.id', $id)
             );
         }
-
-        $q->andWhere($q->expr()->isNull($this->getTableAlias().'.deleted'));
 
         $q->orderBy('l.name');
 
@@ -446,22 +424,6 @@ class LeadListRepository extends CommonRepository
                 $expr            = $q->expr()->like('l.name', ':'.$unique);
                 $returnParameter = true;
                 break;
-            case $this->translator->trans('mautic.lead.list.searchcommand.filters_field'):
-            case $this->translator->trans('mautic.lead.list.searchcommand.filters_field', [], null, 'en_US'):
-                $pattern         = sprintf('%%s:5:"field";s:%d:"%s"%%', strlen($filter->string), $filter->string);
-                $expr            = $q->expr()->like('l.filters', ':'.$unique);
-                $forceParameters = [$unique => $pattern];
-                break;
-            case $this->translator->trans('mautic.project.searchcommand.name'):
-            case $this->translator->trans('mautic.project.searchcommand.name', [], null, 'en_US'):
-                return $this->handleProjectFilter(
-                    $this->_em->getConnection()->createQueryBuilder(),
-                    'leadlist_id',
-                    'lead_list_projects_xref',
-                    'l',
-                    $filter->string,
-                    $filter->not
-                );
         }
 
         if (!empty($forceParameters)) {
@@ -489,8 +451,6 @@ class LeadListRepository extends CommonRepository
             'mautic.core.searchcommand.name',
             'mautic.core.searchcommand.ismine',
             'mautic.core.searchcommand.category',
-            'mautic.lead.list.searchcommand.filters_field',
-            'mautic.project.searchcommand.name',
         ];
 
         return array_merge($commands, parent::getSearchCommands());
@@ -638,26 +598,6 @@ SQL;
 
     /**
      * @param int[] $expectedSegmentIds
-     */
-    public function isContactInAllSegments(int $contactId, array $expectedSegmentIds): bool
-    {
-        $segmentIds = $this->fetchContactToSegmentIdsRelationships($contactId, $expectedSegmentIds);
-
-        return count($segmentIds) === count($expectedSegmentIds);
-    }
-
-    /**
-     * @param int[] $expectedSegmentIds
-     */
-    public function isNotContactInAllSegments(int $contactId, array $expectedSegmentIds): bool
-    {
-        $segmentIds = $this->fetchContactToSegmentIdsRelationships($contactId, $expectedSegmentIds);
-
-        return [] === $segmentIds;
-    }
-
-    /**
-     * @param int[] $expectedSegmentIds
      *
      * @return int[]
      */
@@ -683,17 +623,6 @@ SQL;
                 ]
             )
             ->fetchFirstColumn();
-    }
-
-    public function setSegmentAsDeleted(int $leadListId): void
-    {
-        $dateTime = (new \DateTimeImmutable())->format(DateTimeHelper::FORMAT_DB);
-
-        $this->getEntityManager()->getConnection()->update(
-            MAUTIC_TABLE_PREFIX.LeadList::TABLE_NAME,
-            ['deleted'   => $dateTime, 'is_published' => 0],
-            ['id'        => $leadListId]
-        );
     }
 
     /**
@@ -880,49 +809,5 @@ SQL;
         }
 
         return array_map(fn ($segment) => ['item_id' => (string) $segment], $segmentIds);
-    }
-
-    /**
-     * @return int[]
-     */
-    public function getLeadSegmentIds(int $leadId): array
-    {
-        $qb = $this->getEntityManager()->createQueryBuilder();
-        $qb->select('ll.id')
-            ->from(LeadList::class, 'll')
-            ->innerJoin('ll.leads', 'l')
-            ->where(
-                $qb->expr()->eq('l.lead', ':leadId')
-            )
-            ->setParameter('leadId', $leadId);
-        $result = $qb->getQuery()->getArrayResult();
-
-        return array_column($result, 'id');
-    }
-
-    /**
-     * Get segment IDs for a contact.
-     *
-     * @param string $contactId Contact ID (supports BIGINT UNSIGNED)
-     *
-     * @return int[]
-     */
-    public function getContactSegmentIds(string $contactId): array
-    {
-        $result = $this->getEntityManager()
-            ->getConnection()
-            ->createQueryBuilder()
-            ->select('ll.leadlist_id')
-            ->from(MAUTIC_TABLE_PREFIX.'lead_lists_leads', 'll')
-            ->innerJoin('ll', MAUTIC_TABLE_PREFIX.'lead_lists', 'l', 'll.leadlist_id = l.id')
-            ->where('ll.lead_id = :contactId')
-            ->andWhere('ll.manually_removed = 0')
-            ->andWhere('l.is_published = 1')
-            ->setParameter('contactId', $contactId)
-            ->orderBy('ll.leadlist_id', 'ASC')
-            ->executeQuery()
-            ->fetchAllNumeric();
-
-        return array_map(fn ($row) => (int) $row[0], $result);
     }
 }

@@ -9,7 +9,7 @@ use Symfony\Component\PropertyAccess\PropertyAccess;
 class NotificationArrayTransformer implements DataTransformerInterface
 {
     /** {@inheritdoc} */
-    public function transform(mixed $value): mixed
+    public function transform($value)
     {
         /** Notification $value */
         if (!$value instanceof Notification) {
@@ -35,7 +35,7 @@ class NotificationArrayTransformer implements DataTransformerInterface
     }
 
     /** {@inheritdoc} */
-    public function reverseTransform(mixed $value): mixed
+    public function reverseTransform($value)
     {
         if (!is_array($value)) {
             throw new \InvalidArgumentException('Method expects array as argument');

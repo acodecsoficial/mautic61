@@ -11,7 +11,6 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
 use Symfony\Component\Form\FormInterface;
-use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
 /**
@@ -64,22 +63,6 @@ class ConfigType extends AbstractType
                 ],
             ]
         );
-
-        $builder->add('contact_export_limit', NumberType::class, [
-            'label'      => 'mautic.lead.export.limit.rows',
-            'label_attr' => ['class' => 'control-label'],
-            'attr'       => [
-                'class'   => 'form-control',
-                'tooltip' => 'mautic.lead.export.limit.rows.tooltip',
-            ],
-            'required'    => false,
-            'data'        => $options['data']['contact_export_limit'] ?? 0,
-            'constraints' => [
-                new GreaterThanOrEqual([
-                    'value' => 0,
-                ]),
-            ],
-        ]);
 
         $formModifier = static function (FormInterface $form, $currentColumns): void {
             $order        = [];

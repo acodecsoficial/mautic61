@@ -6,8 +6,6 @@ use Mautic\PageBundle\Model\PageModel;
 
 class TokenHelper
 {
-    public const REGEX = '/{pagelink=(.*?)}/';
-
     public function __construct(
         protected PageModel $model,
     ) {
@@ -15,7 +13,7 @@ class TokenHelper
 
     public function findPageTokens($content, $clickthrough = []): array
     {
-        preg_match_all(self::REGEX, $content, $matches);
+        preg_match_all('/{pagelink=(.*?)}/', $content, $matches);
 
         $tokens = [];
         if (!empty($matches[1])) {

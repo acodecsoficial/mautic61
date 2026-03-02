@@ -7,17 +7,12 @@ namespace Mautic\IntegrationsBundle\Command;
 use Mautic\IntegrationsBundle\Exception\InvalidValueException;
 use Mautic\IntegrationsBundle\Sync\DAO\Sync\InputOptionsDAO;
 use Mautic\IntegrationsBundle\Sync\SyncService\SyncServiceInterface;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-#[AsCommand(
-    name: SyncCommand::NAME,
-    description: 'Fetch objects from integration.'
-)]
 class SyncCommand extends Command
 {
     public const NAME = 'mautic:integrations:sync';
@@ -30,7 +25,7 @@ class SyncCommand extends Command
 
     protected function configure(): void
     {
-        $this
+        $this->setName(self::NAME)
             ->addArgument(
                 'integration',
                 InputOption::VALUE_REQUIRED,
@@ -128,4 +123,6 @@ class SyncCommand extends Command
 
         return Command::SUCCESS;
     }
+
+    protected static $defaultDescription = 'Fetch objects from integration.';
 }

@@ -4,11 +4,8 @@
     {% endif %}
 
     {% if 'table' == chartType %}
-        {% set tableHeader = tableHeader is defined
-            ? tableHeader
-            : (chartData[0] is defined ? chartData[0]|keys : []) %}
         {{ include('@MauticCore/Helper/table.html.twig', {
-            'headItems': tableHeader,
+            'headItems': (chartData[0] is defined) ? chartData[0]|keys : [],
             'bodyItems': chartData,
         }) }}
     {% else %}

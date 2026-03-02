@@ -3,7 +3,6 @@
 namespace Mautic\ReportBundle\Model;
 
 use Mautic\CoreBundle\Helper\CoreParametersHelper;
-use Mautic\CoreBundle\Helper\CsvHelper;
 use Mautic\CoreBundle\Twig\Helper\FormatterHelper;
 use Mautic\ReportBundle\Crate\ReportDataResult;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -78,7 +77,7 @@ class CsvExporter
         if ($this->coreParametersHelper->get('csv_always_enclose')) {
             fputs($handle, '"'.implode('","', $row).'"'."\n");
         } else {
-            CsvHelper::putCsv($handle, $row);
+            fputcsv($handle, $row);
         }
     }
 }

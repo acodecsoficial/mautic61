@@ -99,6 +99,14 @@ final class AvatarHelper
         return $imageDir.'/lead_avatars';
     }
 
+    /**
+     * @deprecated Use DefaultAvatarHelper::getDefaultAvatar instead of it
+     */
+    public function getDefaultAvatar(bool $absolute = false): string
+    {
+        return $this->defaultAvatarHelper->getDefaultAvatar($absolute);
+    }
+
     public function getName(): string
     {
         return 'lead_avatar';

@@ -17,7 +17,6 @@
 {% set isExisting = activePage.id %}
 {% set variantParent = activePage.variantParent %}
 {% set previewUrl = previewUrl|default('') %}
-{% set draftPreviewUrl = draftPreviewUrl|default('') %}
 
 {% extends '@MauticCore/Default/content.html.twig' %}
 
@@ -98,7 +97,6 @@
               {% else %}
                   {{ form_row(form.alias) }}
                   {{ form_row(form.category) }}
-                  {{ form_row(form.projects) }}
                   {{ form_row(form.language) }}
                   {{ form_row(form.translationParent) }}
               {% endif %}
@@ -147,6 +145,5 @@
       'isCodeMode': ('mautic_code_mode' is same as activePage.template),
       'objectId': activePage.sessionId,
       'previewUrl': previewUrl,
-      'draftPreviewUrl': draftPreviewUrl,
   }, with_context=false) }}
 {% endblock %}

@@ -2,7 +2,6 @@
 
 namespace Mautic\CoreBundle\Helper;
 
-use GuzzleHttp\Psr7\Query;
 use Joomla\Filter\InputFilter;
 
 class InputHelper
@@ -295,7 +294,7 @@ class InputHelper
         }
 
         if (!empty($parts['query'])) {
-            $query = Query::parse($parts['query']);
+            parse_str($parts['query'], $query);
 
             // remove specified keys from the query
             foreach ($removeQuery as $q) {
@@ -304,9 +303,8 @@ class InputHelper
                 }
             }
 
-            // http_build_query urlencodes to RFC 1738 by default.
-            // We change the encoding_type to RFC3986 so that spaces aren't encoded as +.
-            $parts['query'] = Query::build($query, PHP_QUERY_RFC3986);
+            // http_build_query urlencodes by default
+            $parts['query'] = http_build_query($query);
         }
 
         return
@@ -589,17 +587,5 @@ class InputHelper
     private static function filter_string_polyfill(string $string): string
     {
         return preg_replace('/\x00|<[^>]*>?/', '', $string);
-    }
-
-    /**
-     * Strip disallowed HTML tags from a string.
-     *
-     * @param string[] $allowedTags
-     */
-    public static function stripTags(string $input, array $allowedTags = []): string
-    {
-        $allowed = implode('', array_map(fn ($tag) => "<$tag>", $allowedTags));
-
-        return strip_tags($input, $allowed);
     }
 }

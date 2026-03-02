@@ -13,7 +13,6 @@ use Mautic\CoreBundle\Form\Type\PublishDownDateType;
 use Mautic\CoreBundle\Form\Type\PublishUpDateType;
 use Mautic\CoreBundle\Form\Type\YesNoButtonGroupType;
 use Mautic\CoreBundle\Loader\ParameterLoader;
-use Mautic\ProjectBundle\Form\Type\ProjectType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\LocaleType;
@@ -23,6 +22,7 @@ use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\Callback;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\Url;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
@@ -98,6 +98,13 @@ class AssetType extends AbstractType
                 'label_attr'  => ['class' => 'control-label'],
                 'attr'        => ['class' => 'form-control'],
                 'required'    => false,
+                'constraints' => [
+                    new Url(
+                        [
+                            'message' => 'mautic.asset.validation.error.url',
+                        ]
+                    ),
+                ],
             ]
         );
 
@@ -143,8 +150,6 @@ class AssetType extends AbstractType
                 'bundle' => 'asset',
             ]
         );
-
-        $builder->add('projects', ProjectType::class);
 
         $builder->add('language', LocaleType::class, [
             'label'      => 'mautic.core.language',

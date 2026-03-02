@@ -28,8 +28,7 @@ Mautic.updateRemoteBrowser = function(provider, path) {
 
                 mQuery('.remote-file-search').quicksearch('#remoteFileBrowser .remote-file-list a');
             } else {
-                const flashMessage = Mautic.addErrorFlashMessage(response.message);
-                Mautic.setFlashes(flashMessage);
+                // TODO - Add error handler
             }
         },
         error: function (request, textStatus, errorThrown) {

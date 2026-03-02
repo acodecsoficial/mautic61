@@ -1,18 +1,13 @@
 <?php
 
-declare(strict_types=1);
-
 namespace Mautic\UserBundle\Controller;
 
 use Mautic\CoreBundle\Controller\FormController;
 use Mautic\CoreBundle\Helper\LanguageHelper;
 use Mautic\UserBundle\Entity\User;
 use Mautic\UserBundle\Model\UserModel;
-use Mautic\UserBundle\Security\SAML\Helper as SAMLHelper;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 
@@ -21,8 +16,7 @@ class ProfileController extends FormController
     /**
      * Generate's account profile.
      */
-    public function indexAction(Request $request, LanguageHelper $languageHelper, UserPasswordHasherInterface $hasher,
-        TokenStorageInterface $tokenStorage, SAMLHelper $samlHelper): Response|RedirectResponse
+    public function indexAction(Request $request, LanguageHelper $languageHelper, UserPasswordHasherInterface $hasher, TokenStorageInterface $tokenStorage): \Symfony\Component\HttpFoundation\Response|\Symfony\Component\HttpFoundation\RedirectResponse
     {
         // get current user
         $me = $tokenStorage->getToken()->getUser();
@@ -191,7 +185,7 @@ class ProfileController extends FormController
                     // Update timezone and locale
                     $tz = $me->getTimezone();
                     if (empty($tz)) {
-                        $tz = $this->coreParametersHelper->getDefaultTimezone();
+                        $tz = $this->coreParametersHelper->get('default_timezone');
                     }
                     $request->getSession()->set('_timezone', $tz);
 
@@ -225,16 +219,10 @@ class ProfileController extends FormController
         }
         $request->getSession()->set('formProcessed', 0);
 
-        $isSamlUser    = $samlHelper->isSamlSession();
-        if ($isSamlUser) {
-            $form->remove('plainPassword');
-        }
-
         $parameters = [
             'permissions'       => $permissions,
             'me'                => $me,
             'userForm'          => $form->createView(),
-            'isSamlUser'        => $isSamlUser,
             'authorizedClients' => $this->forward('Mautic\ApiBundle\Controller\ClientController::authorizedClientsAction')->getContent(),
         ];
 

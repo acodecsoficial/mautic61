@@ -6,17 +6,12 @@ use Mautic\ReportBundle\Exception\FileIOException;
 use Mautic\ReportBundle\Model\ReportCleanup;
 use Mautic\ReportBundle\Model\ReportExporter;
 use Mautic\ReportBundle\Scheduler\Option\ExportOption;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
-#[AsCommand(
-    name: 'mautic:reports:scheduler',
-    description: "Processes scheduler for report's export"
-)]
 class ExportSchedulerCommand extends Command
 {
     public function __construct(
@@ -30,6 +25,7 @@ class ExportSchedulerCommand extends Command
     protected function configure()
     {
         $this
+            ->setName('mautic:reports:scheduler')
             ->addOption('--report', 'report', InputOption::VALUE_OPTIONAL, 'ID of report. Process all reports if not set.');
     }
 
@@ -67,4 +63,6 @@ class ExportSchedulerCommand extends Command
 
         return Command::SUCCESS;
     }
+
+    protected static $defaultDescription = 'Processes scheduler for report\'s export';
 }

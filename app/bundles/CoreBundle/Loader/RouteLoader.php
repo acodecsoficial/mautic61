@@ -24,7 +24,7 @@ class RouteLoader extends Loader
      *
      * @throws \RuntimeException
      */
-    public function load(mixed $resource, ?string $type = null): mixed
+    public function load(mixed $resource, $type = null)
     {
         // Public
         $event = new RouteEvent($this, 'public');

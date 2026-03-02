@@ -119,7 +119,7 @@ class ObjectChangeGenerator
                     $internalObject->getObject(),
                     $fieldMappingDAO->getInternalField()
                 ),
-                self::class.':'.__FUNCTION__
+                __CLASS__.':'.__FUNCTION__
             );
 
             return;

@@ -21,7 +21,7 @@ class HitRepository extends CommonRepository
      * @param Page|Redirect $page
      * @param string        $trackingId
      */
-    public function isUniquePageHit($page, $trackingId, ?Lead $lead = null): bool
+    public function isUniquePageHit($page, $trackingId, Lead $lead = null): bool
     {
         $q  = $this->getEntityManager()->getConnection()->createQueryBuilder();
         $q2 = $this->getEntityManager()->getConnection()->createQueryBuilder();
@@ -125,7 +125,7 @@ class HitRepository extends CommonRepository
      *
      * @param int $code
      */
-    public function getEmailClickthroughHitCount($emailIds, ?\DateTime $fromDate = null, $code = 200): array
+    public function getEmailClickthroughHitCount($emailIds, \DateTime $fromDate = null, $code = 200): array
     {
         $q = $this->_em->getConnection()->createQueryBuilder();
 
@@ -220,19 +220,13 @@ class HitRepository extends CommonRepository
     /**
      * Get the latest hit.
      *
-     * @param array{
-     *     leadId?: int,
-     *     urls?: string[]|string|null,
-     *     second_to_last?: int|null
-     * } $options
+     * @param array $options
      */
     public function getLatestHit($options): ?\DateTime
     {
         $sq = $this->_em->getConnection()->createQueryBuilder();
-        $sq->select('h.date_hit')
-            ->from(MAUTIC_TABLE_PREFIX.'page_hits', 'h')
-            ->orderBy('h.date_hit', 'DESC')
-            ->setMaxResults(1);
+        $sq->select('h.date_hit latest_hit')
+            ->from(MAUTIC_TABLE_PREFIX.'page_hits', 'h');
 
         if (isset($options['leadId'])) {
             $sq->andWhere(
@@ -248,15 +242,12 @@ class HitRepository extends CommonRepository
         }
         if (isset($options['second_to_last'])) {
             $sq->andWhere($sq->expr()->neq('h.id', $options['second_to_last']));
+        } else {
+            $sq->orderBy('h.date_hit', 'DESC limit 1');
         }
+        $result = $sq->executeQuery()->fetchAssociative();
 
-        $latestHit = $sq->executeQuery()->fetchOne();
-
-        if (!$latestHit) {
-            return null;
-        }
-
-        return new \DateTime($latestHit, new \DateTimeZone('UTC'));
+        return $result ? new \DateTime($result['latest_hit'], new \DateTimeZone('UTC')) : null;
     }
 
     /**
@@ -267,7 +258,7 @@ class HitRepository extends CommonRepository
      *
      * @return mixed[]
      */
-    public function getBounces($pageIds, ?\DateTime $fromDate = null, $isVariantCheck = false): array
+    public function getBounces($pageIds, \DateTime $fromDate = null, $isVariantCheck = false): array
     {
         $inOrEq = (!is_array($pageIds)) ? 'eq' : 'in';
 
@@ -546,7 +537,7 @@ class HitRepository extends CommonRepository
             ->executeStatement();
     }
 
-    public function getLatestHitDateByLead(int $leadId, ?string $trackingId = null): ?\DateTime
+    public function getLatestHitDateByLead(int $leadId, string $trackingId = null): ?\DateTime
     {
         $q = $this->_em->getConnection()->createQueryBuilder()
             ->select('MAX(date_hit)')

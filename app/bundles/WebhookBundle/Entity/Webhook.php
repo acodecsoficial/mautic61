@@ -2,13 +2,6 @@
 
 namespace Mautic\WebhookBundle\Entity;
 
-use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Delete;
-use ApiPlatform\Metadata\Get;
-use ApiPlatform\Metadata\GetCollection;
-use ApiPlatform\Metadata\Patch;
-use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Put;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\Common\Collections\Criteria;
@@ -19,76 +12,47 @@ use Mautic\ApiBundle\Serializer\Driver\ApiMetadataDriver;
 use Mautic\CategoryBundle\Entity\Category;
 use Mautic\CoreBundle\Doctrine\Mapping\ClassMetadataBuilder;
 use Mautic\CoreBundle\Entity\FormEntity;
-use Mautic\CoreBundle\Entity\SkipModifiedInterface;
-use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Mapping\ClassMetadata;
 
-#[ApiResource(
-    shortName: 'Webhooks',
-    operations: [
-        new GetCollection(uriTemplate: '/webhooks', security: "is_granted('webhook:webhooks:viewown')"),
-        new Post(uriTemplate: '/webhooks', security: "is_granted('webhook:webhooks:create')"),
-        new Get(uriTemplate: '/webhooks/{id}', security: "is_granted('webhook:webhooks:viewown')"),
-        new Put(uriTemplate: '/webhooks/{id}', security: "is_granted('webhook:webhooks:editown')"),
-        new Patch(uriTemplate: '/webhooks/{id}', security: "is_granted('webhook:webhooks:editother')"),
-        new Delete(uriTemplate: '/webhooks/{id}', security: "is_granted('webhook:webhooks:deleteown')"),
-    ],
-    normalizationContext: [
-        'groups'                  => ['webhook:read'],
-        'swagger_definition_name' => 'Read',
-        'api_included'            => ['category'],
-    ],
-    denormalizationContext: [
-        'groups'                  => ['webhook:write'],
-        'swagger_definition_name' => 'Write',
-    ]
-)]
-class Webhook extends FormEntity implements SkipModifiedInterface
+class Webhook extends FormEntity
 {
     public const LOGS_DISPLAY_LIMIT = 100;
 
     /**
      * @var ?int
      */
-    #[Groups(['webhook:read'])]
     private $id;
 
     /**
      * @var ?string
      */
-    #[Groups(['webhook:read', 'webhook:write'])]
     private $name;
 
     /**
      * @var string|null
      */
-    #[Groups(['webhook:read', 'webhook:write'])]
     private $description;
 
     /**
      * @var ?string
      */
-    #[Groups(['webhook:read', 'webhook:write'])]
     private $webhookUrl;
 
     /**
      * @var ?string
      */
-    #[Groups(['webhook:read', 'webhook:write'])]
     private $secret;
 
     /**
      * @var Category|null
      **/
-    #[Groups(['webhook:read', 'webhook:write'])]
     private $category;
 
     /**
      * @var Collection<int, Event>
      */
-    #[Groups(['webhook:read', 'webhook:write'])]
     private $events;
 
     /**
@@ -102,9 +66,8 @@ class Webhook extends FormEntity implements SkipModifiedInterface
     private $removedEvents = [];
 
     /**
-     * @var mixed[]
+     * @var array
      */
-    #[Groups(['webhook:read', 'webhook:write'])]
     private $payload;
 
     /**
@@ -113,7 +76,6 @@ class Webhook extends FormEntity implements SkipModifiedInterface
      *
      * @var array
      */
-    #[Groups(['webhook:read', 'webhook:write'])]
     private $triggers = [];
 
     /**
@@ -122,12 +84,7 @@ class Webhook extends FormEntity implements SkipModifiedInterface
      *
      * @var string|null
      */
-    #[Groups(['webhook:read', 'webhook:write'])]
     private $eventsOrderbyDir;
-
-    private ?\DateTimeImmutable $markedUnhealthyAt      = null;
-    private ?\DateTimeImmutable $unHealthySince         = null;
-    private ?\DateTimeImmutable $lastNotificationSentAt = null;
 
     public function __construct()
     {
@@ -147,7 +104,7 @@ class Webhook extends FormEntity implements SkipModifiedInterface
 
         $builder->createOneToMany('events', 'Event')
             ->orphanRemoval()
-            ->setIndexBy('eventType')
+            ->setIndexBy('event_type')
             ->mappedBy('webhook')
             ->cascadePersist()
             ->cascadeMerge()
@@ -165,9 +122,6 @@ class Webhook extends FormEntity implements SkipModifiedInterface
         $builder->addNamedField('webhookUrl', Types::TEXT, 'webhook_url');
         $builder->addField('secret', Types::STRING);
         $builder->addNullableField('eventsOrderbyDir', Types::STRING, 'events_orderby_dir');
-        $builder->addNullableField('markedUnhealthyAt', Types::DATETIME_IMMUTABLE, 'marked_unhealthy_at');
-        $builder->addNullableField('unHealthySince', Types::DATETIME_IMMUTABLE, 'unhealthy_since');
-        $builder->addNullableField('lastNotificationSentAt', Types::DATETIME_IMMUTABLE, 'last_notification_sent_at');
     }
 
     /**
@@ -327,7 +281,7 @@ class Webhook extends FormEntity implements SkipModifiedInterface
     /**
      * @return Webhook
      */
-    public function setCategory(?Category $category = null)
+    public function setCategory(Category $category = null)
     {
         $this->isChanged('category', $category);
         $this->category = $category;
@@ -580,57 +534,5 @@ class Webhook extends FormEntity implements SkipModifiedInterface
         } else {
             parent::isChanged($prop, $val);
         }
-    }
-
-    public function getMarkedUnhealthyAt(): ?\DateTimeImmutable
-    {
-        return $this->markedUnhealthyAt;
-    }
-
-    public function setMarkedUnhealthyAt(?\DateTimeImmutable $markedUnhealthyAt): Webhook
-    {
-        $this->isChanged('markedUnhealthyAt', $markedUnhealthyAt);
-        $this->markedUnhealthyAt = $markedUnhealthyAt;
-
-        return $this;
-    }
-
-    public function getUnHealthySince(): ?\DateTimeImmutable
-    {
-        return $this->unHealthySince;
-    }
-
-    public function setUnHealthySince(?\DateTimeImmutable $unHealthySince): self
-    {
-        $this->unHealthySince = $unHealthySince;
-
-        return $this;
-    }
-
-    public function getLastNotificationSentAt(): ?\DateTimeImmutable
-    {
-        return $this->lastNotificationSentAt;
-    }
-
-    public function setLastNotificationSentAt(?\DateTimeImmutable $lastNotificationSentAt): self
-    {
-        $this->lastNotificationSentAt = $lastNotificationSentAt;
-
-        return $this;
-    }
-
-    /**
-     * Do not update modified_by and date_modified fields if only DNC or manipulator was changed.
-     * Avoid unnecessary update queries.
-     */
-    public function shouldSkipSettingModifiedProperties(): bool
-    {
-        $changes = $this->changes;
-
-        unset($changes['markedUnhealthyAt']);
-        unset($changes['unHealthySince']);
-        unset($changes['lastNotificationSentAt']);
-
-        return 0 === count($changes);
     }
 }

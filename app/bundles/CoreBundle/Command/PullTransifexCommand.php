@@ -14,7 +14,6 @@ use Mautic\Transifex\Exception\InvalidConfigurationException;
 use Mautic\Transifex\Exception\ResponseException;
 use Mautic\Transifex\Promise;
 use Psr\Http\Message\ResponseInterface;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -24,10 +23,6 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 /**
  * CLI Command to pull language resources from Transifex.
  */
-#[AsCommand(
-    name: PullTransifexCommand::NAME,
-    description: 'Fetches translations for Mautic from Transifex'
-)]
 class PullTransifexCommand extends Command
 {
     public const NAME = 'mautic:transifex:pull';
@@ -43,7 +38,7 @@ class PullTransifexCommand extends Command
 
     protected function configure(): void
     {
-        $this
+        $this->setName(self::NAME)
             ->addOption('language', null, InputOption::VALUE_OPTIONAL, 'Optional language to pull', null)
             ->addOption('bundle', null, InputOption::VALUE_OPTIONAL, 'Optional bundle to pull. Example value: WebhookBundle', null)
             ->addOption('path', null, InputOption::VALUE_OPTIONAL, 'Optional path to a directory where to store the traslations.', null)
@@ -150,4 +145,6 @@ EOT
 
         return Command::SUCCESS;
     }
+
+    protected static $defaultDescription = 'Fetches translations for Mautic from Transifex';
 }

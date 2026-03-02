@@ -11,7 +11,6 @@ use Mautic\CategoryBundle\Event\CategoryTypeEntityEvent;
 use Mautic\CategoryBundle\Form\Type\CategoryType;
 use Mautic\CoreBundle\Helper\CoreParametersHelper;
 use Mautic\CoreBundle\Helper\UserHelper;
-use Mautic\CoreBundle\Model\AjaxLookupModelInterface;
 use Mautic\CoreBundle\Model\FormModel;
 use Mautic\CoreBundle\Security\Permissions\CorePermissions;
 use Mautic\CoreBundle\Translation\Translator;
@@ -26,7 +25,7 @@ use Symfony\Contracts\EventDispatcher\Event;
 /**
  * @extends FormModel<Category>
  */
-class CategoryModel extends FormModel implements AjaxLookupModelInterface
+class CategoryModel extends FormModel
 {
     /**
      * @var array<string,mixed[]>
@@ -47,7 +46,6 @@ class CategoryModel extends FormModel implements AjaxLookupModelInterface
         parent::__construct($em, $security, $dispatcher, $router, $translator, $userHelper, $mauticLogger, $coreParametersHelper);
     }
 
-    // @phpstan-ignore-next-line method.childReturnType
     public function getRepository(): CategoryRepository
     {
         $repository = $this->em->getRepository(Category::class);
@@ -61,7 +59,7 @@ class CategoryModel extends FormModel implements AjaxLookupModelInterface
         return 'getTitle';
     }
 
-    public function getPermissionBase(?string $bundle = null): string
+    public function getPermissionBase(string $bundle = null): string
     {
         if (null === $bundle) {
             $bundle = $this->requestStack->getCurrentRequest()->get('bundle');
@@ -133,7 +131,7 @@ class CategoryModel extends FormModel implements AjaxLookupModelInterface
     /**
      * @throws MethodNotAllowedHttpException
      */
-    protected function dispatchEvent($action, &$entity, $isNew = false, ?Event $event = null): ?Event
+    protected function dispatchEvent($action, &$entity, $isNew = false, Event $event = null): ?Event
     {
         if (!$entity instanceof Category) {
             throw new MethodNotAllowedHttpException(['Category']);
@@ -171,40 +169,23 @@ class CategoryModel extends FormModel implements AjaxLookupModelInterface
     }
 
     /**
-     * {@inheritDoc}
+     * Get list of entities for autopopulate fields.
      *
-     * @param string               $type
-     * @param string               $filter
-     * @param int                  $limit
-     * @param int                  $start
-     * @param array<string, mixed> $options
+     * @param string $bundle
+     * @param string $filter
+     * @param int    $limit
      *
-     * @return array<mixed>
+     * @return mixed[]
      */
-    public function getLookupResults($type, $filter = '', $limit = 10, $start = 0, array $options = []): array
+    public function getLookupResults($bundle, $filter = '', $limit = 10): array
     {
-        $filterString = is_array($filter) ? implode('.', $filter) : $filter;
-        $key          = $type.$filterString.$limit;
+        $key = $bundle.$filter.$limit;
 
-        if (!isset($options['for_lookup']) && !empty($this->categoriesByBundleCache[$key])) {
+        if (!empty($this->categoriesByBundleCache[$key])) {
             return $this->categoriesByBundleCache[$key];
         }
 
-        $result = $this->getRepository()->getCategoryList($type, $filter, $limit, $start);
-
-        if (!isset($options['for_lookup'])) {
-            return $this->categoriesByBundleCache[$key] = $result;
-        }
-
-        $data = [];
-        foreach ($result as $entity) {
-            $data[] = [
-                'label' => $entity['title'],
-                'value' => $entity['id'],
-            ];
-        }
-
-        return $data;
+        return $this->categoriesByBundleCache[$key] = $this->getRepository()->getCategoryList($bundle, $filter, $limit, 0);
     }
 
     /**

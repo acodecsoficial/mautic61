@@ -125,54 +125,66 @@ class FocusModel extends FormModel implements GlobalSearchInterface
     public function saveEntity($entity, $unlock = true): void
     {
         parent::saveEntity($entity, $unlock);
-        $this->generateTrackableUrl($entity);
+
+        // Generate cache after save to have ID available
+        $content = $this->generateJavascript($entity);
+        $entity->setCache($content);
+
+        $this->getRepository()->saveEntity($entity);
     }
 
     /**
-     * @param bool $isPreview
+     * @return string|string[]
      */
-    public function generateJavascript(Focus $focus, $isPreview = false): string
+    public function generateJavascript(Focus $focus, $isPreview = false, $byPassCache = false): array|string
     {
-        $lead           = $this->contactTracker->getContact();
-        $focusArray     = $focus->toArray();
-        $url            = '';
+        // If cached is not an array, rebuild to support the new format
+        $cached = $focus->getCache() ? json_decode($focus->getCache(), true) : [];
+        if ($isPreview || $byPassCache || empty($cached) || !isset($cached['js'])) {
+            $focusArray = $focus->toArray();
 
-        if ($trackableUrl = $this->generateTrackableUrl($focus, $lead)) {
-            $url = '{focusClickUrl}';
+            $url = '';
+            if ('link' == $focusArray['type'] && !empty($focusArray['properties']['content']['link_url'])) {
+                $url = $focusArray['properties']['content']['link_url'];
+            }
+
+            $javascript = $this->twig->render(
+                '@MauticFocus/Builder/generate.js.twig',
+                [
+                    'focus'    => $focus,
+                    'preview'  => $isPreview,
+                    'clickUrl' => $url,
+                ]
+            );
+
+            $content = $this->getContent($focusArray, $isPreview, $url);
+            $cached  = [
+                'js'    => (new Minify\JS($javascript))->minify(),
+                'focus' => InputHelper::minifyHTML($content['focus']),
+                'form'  => InputHelper::minifyHTML($content['form']),
+            ];
+
+            if (!$byPassCache) {
+                $focus->setCache(json_encode($cached));
+                $this->saveEntity($focus);
+            }
         }
 
-        $javascript = $this->twig->render(
-            '@MauticFocus/Builder/generate.js.twig',
-            [
-                'focus'    => $focus,
-                'preview'  => $isPreview,
-                'clickUrl' => $url,
-            ]
-        );
-
-        $content = $this->getContent($focusArray, $isPreview, $url);
-        $data    = [
-            'js'    => (new Minify\JS($javascript))->minify(),
-            'focus' => InputHelper::minifyHTML($content['focus']),
-            'form'  => InputHelper::minifyHTML($content['form']),
-        ];
-
-        // Replace tokens to ensure clickthroughs, lead tokens etc. are appropriate
-        $tokenEvent = new TokenReplacementEvent($data['focus'], $lead, ['focus_id' => $focus->getId()]);
-        if ($trackableUrl) {
-            $tokenEvent->addToken($url, $trackableUrl);
-        }
+        // Replace tokens to ensure clickthroughs, lead tokens etc are appropriate
+        $lead       = $this->contactTracker->getContact();
+        $tokenEvent = new TokenReplacementEvent($cached['focus'], $lead, ['focus_id' => $focus->getId()]);
         $this->dispatcher->dispatch($tokenEvent, FocusEvents::TOKEN_REPLACEMENT);
         $focusContent = $tokenEvent->getContent();
-        $focusContent = str_replace('{focus_form}', $data['form'], $focusContent, $formReplaced);
-        if (!$formReplaced && !empty($data['form'])) {
+
+        $focusContent = str_replace('{focus_form}', $cached['form'], $focusContent, $formReplaced);
+        if (!$formReplaced && !empty($cached['form'])) {
             // Form token missing so just append the form
-            $focusContent .= $data['form'];
+            $focusContent .= $cached['form'];
         }
 
         $focusContent = $this->twig->getRuntime(EscaperRuntime::class)->escape($focusContent, 'js');
 
-        return str_replace('{focus_content}', $focusContent, $data['js']);
+        return str_replace('{focus_content}', $focusContent, $cached['js']);
     }
 
     /**
@@ -231,11 +243,6 @@ class FocusModel extends FormModel implements GlobalSearchInterface
                 'displayManager' => $displayManager,
             ]
         ) : '';
-
-        if ($form) {
-            $formName = $form->generateFormName("{$form->getName()}_focus", ['_']);
-            $this->formModel->populateValuesWithLead($form, $formContent, $formName);
-        }
 
         if ($isPreview) {
             $content = str_replace('{focus_form}', $formContent, $content, $formReplaced);
@@ -318,7 +325,7 @@ class FocusModel extends FormModel implements GlobalSearchInterface
     /**
      * @throws MethodNotAllowedHttpException
      */
-    protected function dispatchEvent($action, &$entity, $isNew = false, ?Event $event = null): ?Event
+    protected function dispatchEvent($action, &$entity, $isNew = false, Event $event = null): ?Event
     {
         if (!$entity instanceof Focus) {
             throw new MethodNotAllowedHttpException(['Focus']);
@@ -414,24 +421,5 @@ class FocusModel extends FormModel implements GlobalSearchInterface
     public function getClickThroughCount(Focus $focus): int
     {
         return $this->getStatRepository()->getClickThroughCount($focus->getId());
-    }
-
-    private function generateTrackableUrl(Focus $focus, ?Lead $lead = null): ?string
-    {
-        $focusArray = $focus->toArray();
-
-        if ('link' != $focusArray['type'] || !($linkUrl = $focusArray['properties']['content']['link_url'])) {
-            return null;
-        }
-
-        return $this->trackableModel->generateTrackableUrl(
-            $this->trackableModel->getTrackableByUrl($linkUrl, 'focus', $focus->getId()),
-            [
-                'channel' => ['focus', $focus->getId()],
-                'lead'    => $lead ? $lead->getId() : null,
-            ],
-            false,
-            $focus->getUtmTags()
-        );
     }
 }

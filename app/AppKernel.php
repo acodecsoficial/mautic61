@@ -51,7 +51,7 @@ class AppKernel extends Kernel
          */
         if (!defined('MAUTIC_DB_SERVER_VERSION')) {
             $localConfigFile = ParameterLoader::getLocalConfigFile($this->getApplicationDir().'/app', false);
-            define('MAUTIC_DB_SERVER_VERSION', file_exists($localConfigFile) ? null : '8.4');
+            define('MAUTIC_DB_SERVER_VERSION', file_exists($localConfigFile) ? null : '5.7');
         }
 
         parent::__construct($environment, $debug);
@@ -117,11 +117,12 @@ class AppKernel extends Kernel
             new JMS\SerializerBundle\JMSSerializerBundle(),
             new Oneup\UploaderBundle\OneupUploaderBundle(),
             new Symfony\Bundle\TwigBundle\TwigBundle(),
+            new Sensio\Bundle\FrameworkExtraBundle\SensioFrameworkExtraBundle(),
             new LightSaml\SymfonyBridgeBundle\LightSamlSymfonyBridgeBundle(),
             new LightSaml\SpBundle\LightSamlSpBundle(),
+            new Noxlogic\RateLimitBundle\NoxlogicRateLimitBundle(),
             new FM\ElfinderBundle\FMElfinderBundle(),
             new Exercise\HTMLPurifierBundle\ExerciseHTMLPurifierBundle(),
-            new ApiPlatform\Symfony\Bundle\ApiPlatformBundle(),
 
             // Mautic Bundles
             new Mautic\ApiBundle\MauticApiBundle(),
@@ -144,7 +145,6 @@ class AppKernel extends Kernel
             new Mautic\PageBundle\MauticPageBundle(),
             new Mautic\PluginBundle\MauticPluginBundle(),
             new Mautic\PointBundle\MauticPointBundle(),
-            new Mautic\ProjectBundle\MauticProjectBundle(),
             new Mautic\ReportBundle\MauticReportBundle(),
             new Mautic\SmsBundle\MauticSmsBundle(),
             new Mautic\StageBundle\MauticStageBundle(),

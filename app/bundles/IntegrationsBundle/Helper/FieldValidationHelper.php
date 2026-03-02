@@ -58,7 +58,7 @@ class FieldValidationHelper
         }
     }
 
-    private function validateIntegrationRequiredFields(FormInterface $fieldMappingsForm, array $missingFields): void
+    private function validateIntegrationRequiredFields(Form $fieldMappingsForm, array $missingFields): void
     {
         $hasMissingFields  = false;
         $errorsOnGivenPage = false;
@@ -74,7 +74,7 @@ class FieldValidationHelper
 
             $errorsOnGivenPage = true;
 
-            /** @var FormInterface $formField */
+            /** @var Form $formField */
             $formField = $fieldMappingsForm[$field]['mappedField'];
             $formField->addError(
                 new FormError(
@@ -110,7 +110,7 @@ class FieldValidationHelper
     /**
      * @throws ObjectNotFoundException
      */
-    private function validateMauticRequiredFields(FormInterface $fieldMappingsForm, string $object, array $objectFieldMappings): void
+    private function validateMauticRequiredFields(Form $fieldMappingsForm, string $object, array $objectFieldMappings): void
     {
         $missingFields = $this->findMissingInternalRequiredFieldMappings($object, $objectFieldMappings);
         if (empty($missingFields)) {

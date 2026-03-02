@@ -6,6 +6,7 @@ namespace Mautic\CoreBundle\Doctrine\Paginator;
 
 use Doctrine\ORM\Query;
 use Doctrine\ORM\Tools\Pagination\CountWalker;
+use IteratorAggregate;
 
 /**
  * This is a fast paginator (unlike \Doctrine\ORM\Tools\Pagination\Paginator) that can handle simple queries using no joins or ManyToOne joins.
@@ -13,7 +14,7 @@ use Doctrine\ORM\Tools\Pagination\CountWalker;
  *
  * @template T
  *
- * @implements \IteratorAggregate<mixed>
+ * @implements IteratorAggregate<mixed>
  */
 class SimplePaginator implements \IteratorAggregate, \Countable
 {

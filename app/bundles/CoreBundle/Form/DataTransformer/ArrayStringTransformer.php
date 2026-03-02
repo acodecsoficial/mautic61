@@ -14,7 +14,7 @@ class ArrayStringTransformer implements DataTransformerInterface
      *
      * @return string
      */
-    public function transform(mixed $array): mixed
+    public function transform($array)
     {
         if (null === $array) {
             return '';
@@ -31,7 +31,7 @@ class ArrayStringTransformer implements DataTransformerInterface
      *
      * @return array<string>
      */
-    public function reverseTransform(mixed $string): mixed
+    public function reverseTransform($string)
     {
         if (!$string) {
             return [];

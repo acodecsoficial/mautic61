@@ -2,8 +2,6 @@
 
 namespace Mautic\CoreBundle\Helper;
 
-use GuzzleHttp\Psr7\Query;
-
 class UrlHelper
 {
     /**
@@ -226,21 +224,10 @@ class UrlHelper
         $query = parse_url($url, PHP_URL_QUERY);
 
         if (!empty($query)) {
-            $parsedQuery = Query::parse($query);
+            parse_str($query, $parsedQuery);
 
             if ($parsedQuery) {
-                $queryItems = [];
-
-                // Remove duplicate query parameters from query.
-                foreach ($parsedQuery as $index => $item) {
-                    if (is_array($item) && !str_ends_with($index, '[]')) {
-                        $item = array_last($item);
-                    }
-
-                    $queryItems[$index] = $item;
-                }
-
-                $encodedQuery = Query::build($queryItems, PHP_QUERY_RFC3986);
+                $encodedQuery = http_build_query($parsedQuery);
                 $url          = str_replace('?'.$query, '?'.$encodedQuery, $url);
             }
         }
@@ -280,11 +267,9 @@ class UrlHelper
      */
     public static function isValidUrl($url): bool
     {
-        $path = parse_url($url, PHP_URL_PATH);
-        if (null !== $path) {
-            $encodedPath = array_map('urlencode', explode('/', $path));
-            $url         = str_replace($path, implode('/', $encodedPath), $url);
-        }
+        $path         = parse_url($url, PHP_URL_PATH);
+        $encodedPath  = array_map('urlencode', explode('/', $path));
+        $url          = str_replace($path, implode('/', $encodedPath), $url);
 
         return (bool) filter_var($url, FILTER_VALIDATE_URL);
     }

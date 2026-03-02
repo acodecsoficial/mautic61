@@ -17,11 +17,13 @@ class Unlink extends Command implements PrefixableCommandInterface
     }
 
     /**
-     * @param list<string> $arguments
+     * @param mixed[] $arguments
+     *
+     * @return mixed[]
      */
-    public function setArguments(array $arguments): void
+    protected function filterArguments(array $arguments): array
     {
-        parent::setArguments(self::normalizeArguments($arguments));
+        return self::normalizeArguments($arguments);
     }
 
     public function prefixKeys($prefix): void

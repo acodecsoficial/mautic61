@@ -92,6 +92,11 @@ return [
                     'mautic.doctrine.loader.mautic_fixtures_loader',
                 ],
             ],
+            'mautic.install.leadcolumns' => [
+                'class'     => Mautic\InstallBundle\EventListener\DoctrineEventSubscriber::class,
+                'tag'       => 'doctrine.event_subscriber',
+                'arguments' => [],
+            ],
         ],
     ],
 ];

@@ -7,7 +7,6 @@ use Doctrine\ORM\Exception\ORMException;
 use Mautic\AssetBundle\Entity\Asset;
 use Mautic\AssetBundle\Model\AssetModel;
 use Mautic\CoreBundle\Factory\ModelFactory;
-use Mautic\CoreBundle\Helper\ClickthroughHelper;
 use Mautic\CoreBundle\Helper\CoreParametersHelper;
 use Mautic\CoreBundle\Helper\InputHelper;
 use Mautic\CoreBundle\Helper\PathsHelper;
@@ -142,8 +141,10 @@ class MailHelper
 
     /**
      * Tells the helper that the transport supports tokenized emails (likely HTTP API).
+     *
+     * @var bool
      */
-    protected bool $tokenizationEnabled;
+    protected $tokenizationEnabled = false;
 
     /**
      * Use queue mode when sending email through this mailer; this requires a transport that supports tokenization and the use of queue/flushQueue.
@@ -250,7 +251,6 @@ class MailHelper
         private AssetModel $assetModel,
         private TrackableModel $trackableModel,
         private RedirectModel $redirectModel,
-        private SMimeHelper $sMimeHelper,
     ) {
         $this->transport  = $this->getTransport();
         $this->returnPath = $coreParametersHelper->get('mailer_return_path');
@@ -264,18 +264,12 @@ class MailHelper
         $this->setDefaultFrom(false, new AddressDTO($systemFromEmail, $systemFromName));
         $this->setDefaultReplyTo($systemReplyToEmail, $this->from);
 
-        $this->message = $this->getMessageInstance();
-
-        $this->tokenizationEnabled = $this->isTokenizationSupported();
-    }
-
-    private function isTokenizationSupported(): bool
-    {
-        if ($this->sMimeHelper->sMimeSigningEnabled()) {
-            return false;
+        // Check if batching is supported by the transport
+        if ($this->transport instanceof TokenTransportInterface) {
+            $this->tokenizationEnabled = true;
         }
 
-        return $this->transport instanceof TokenTransportInterface;
+        $this->message = $this->getMessageInstance();
     }
 
     /**
@@ -392,12 +386,9 @@ class MailHelper
                 }
             }
 
-            // Sign the message with S/MIME if enabled
-            $messageToSend = $this->sMimeHelper->signContent($this->message);
-
             try {
                 if (!$this->skip) {
-                    $this->mailer->send($messageToSend);
+                    $this->mailer->send($this->message);
                     $this->message->clearMetadata();
                 }
                 $this->skip = false;
@@ -1075,7 +1066,7 @@ class MailHelper
     /**
      * Set Reply to for the current message we are sending. Can be in the middle of the sending loop.
      */
-    private function setMessageReplyTo(string $addresses, ?string $name = null): void
+    private function setMessageReplyTo(string $addresses, string $name = null): void
     {
         if (str_contains($addresses, ',')) {
             $addresses = explode(',', $addresses);
@@ -1127,7 +1118,6 @@ class MailHelper
     {
         try {
             $this->message->from($from->toMailerAddress());
-            $this->message->sender($from->toMailerAddress());
         } catch (\Exception $e) {
             $this->logError($e, 'from');
         }
@@ -1410,7 +1400,7 @@ class MailHelper
                     'idHash' => $this->idHash,
                 ],
                 UrlGeneratorInterface::ABSOLUTE_URL
-            ).'?ct='.ClickthroughHelper::encodeArrayForUrl(['sent_time' => time()]);
+            );
         } else {
             $tokens['{tracking_pixel}'] = self::getBlankPixel();
         }
@@ -1612,7 +1602,7 @@ class MailHelper
     /**
      * Queues the details to note if a lead received an asset if no errors are generated.
      */
-    protected function queueAssetDownloadEntry($contactEmail = null, ?array $metadata = null)
+    protected function queueAssetDownloadEntry($contactEmail = null, array $metadata = null)
     {
         if ($this->internalSend || empty($this->assets)) {
             return;
@@ -1957,7 +1947,7 @@ class MailHelper
         $this->from       = $this->systemFrom;
     }
 
-    private function setDefaultReplyTo($systemReplyToEmail = null, ?AddressDTO $systemFromEmail = null): void
+    private function setDefaultReplyTo($systemReplyToEmail = null, AddressDTO $systemFromEmail = null): void
     {
         $fromEmail = null;
         if ($systemFromEmail) {
@@ -2032,6 +2022,52 @@ class MailHelper
 
         // 4. Set the reply to address from the global config if nothing from above is set.
         $this->setMessageReplyTo($this->getReplyTo());
+    }
+
+    /**
+     * @return bool|array
+     *
+     * @deprecated
+     */
+    protected function getContactOwner(&$contact)
+    {
+        if (!is_array($contact)) {
+            return false;
+        }
+
+        if (!isset($contact['id'])) {
+            return false;
+        }
+
+        if (!isset($contact['owner_id'])) {
+            $contact['owner_id'] = 0;
+
+            return false;
+        }
+
+        try {
+            return $this->fromEmailHelper->getContactOwner($contact['owner_id']);
+        } catch (OwnerNotFoundException) {
+            return false;
+        }
+    }
+
+    /**
+     * @deprecated; use FromEmailHelper::getUserSignature
+     */
+    protected function getContactOwnerSignature($owner): string
+    {
+        if (empty($owner['id'])) {
+            return '';
+        }
+
+        try {
+            $this->fromEmailHelper->getContactOwner($owner['id']);
+        } catch (OwnerNotFoundException) {
+            return '';
+        }
+
+        return $this->fromEmailHelper->getSignature();
     }
 
     private function getMessageInstance(): MauticMessage

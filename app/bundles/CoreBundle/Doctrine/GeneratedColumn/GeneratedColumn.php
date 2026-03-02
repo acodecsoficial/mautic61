@@ -6,19 +6,18 @@ namespace Mautic\CoreBundle\Doctrine\GeneratedColumn;
 
 final class GeneratedColumn implements GeneratedColumnInterface
 {
-    private string $tablePrefix;
+    /**
+     * @var string
+     */
+    private $tablePrefix = '';
 
     private string $columnName;
-
-    private bool $stored = false;
 
     private ?string $originalDateColumn = null;
 
     private ?string $timeUnit = null;
 
     private array $indexColumns = [];
-
-    private ?string $filterDateColumn = null;
 
     public function __construct(
         private string $tableName,
@@ -27,7 +26,7 @@ final class GeneratedColumn implements GeneratedColumnInterface
         private string $as,
     ) {
         $this->indexColumns[] = $columnName;
-        $this->tablePrefix    = (string) MAUTIC_TABLE_PREFIX;
+        $this->tablePrefix    = MAUTIC_TABLE_PREFIX;
         $this->columnName     = $columnName;
     }
 
@@ -41,19 +40,9 @@ final class GeneratedColumn implements GeneratedColumnInterface
         return $this->columnName;
     }
 
-    public function setStored(bool $stored): void
-    {
-        $this->stored = $stored;
-    }
-
     public function addIndexColumn(string $indexColumn): void
     {
         $this->indexColumns[] = $indexColumn;
-    }
-
-    public function prependIndexColumn(string $indexColumn): void
-    {
-        array_unshift($this->indexColumns, $indexColumn);
     }
 
     public function setOriginalDateColumn(string $originalDateColumn, string $timeUnit): void
@@ -67,32 +56,20 @@ final class GeneratedColumn implements GeneratedColumnInterface
         return $this->originalDateColumn;
     }
 
-    public function getTimeUnit(): ?string
+    public function getTimeUnit(): string
     {
         return $this->timeUnit;
     }
 
     public function getAlterTableSql(): string
     {
-        return "ALTER TABLE {$this->getTableName()} {$this->getAddColumnSql()};
-            ALTER TABLE {$this->getTableName()} {$this->getAddIndexSql()}";
-    }
-
-    public function getAddColumnSql(): string
-    {
-        return "ADD {$this->getColumnName()} {$this->getColumnDefinition()}";
-    }
-
-    public function getAddIndexSql(): string
-    {
-        return "ADD INDEX `{$this->getIndexName()}`({$this->indexColumnsToString()})";
+        return "ALTER TABLE {$this->getTableName()} ADD {$this->getColumnName()} {$this->getColumnDefinition()};
+            ALTER TABLE {$this->getTableName()} ADD INDEX `{$this->getIndexName()}`({$this->indexColumnsToString()})";
     }
 
     public function getColumnDefinition(): string
     {
-        $stored = $this->stored ? ' STORED' : '';
-
-        return "{$this->columnType} AS ({$this->as}){$stored} COMMENT '(DC2Type:generated)'";
+        return "{$this->columnType} AS ({$this->as}) COMMENT '(DC2Type:generated)'";
     }
 
     public function getIndexColumns(): array
@@ -103,16 +80,6 @@ final class GeneratedColumn implements GeneratedColumnInterface
     public function getIndexName(): string
     {
         return $this->tablePrefix.$this->indexColumnsToString('_');
-    }
-
-    public function getFilterDateColumn(): ?string
-    {
-        return $this->filterDateColumn;
-    }
-
-    public function setFilterDateColumn(?string $filterDateColumn): void
-    {
-        $this->filterDateColumn = $filterDateColumn;
     }
 
     private function indexColumnsToString(string $separator = ', '): string

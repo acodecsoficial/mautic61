@@ -12,7 +12,7 @@ class CustomTemplateEvent extends AbstractCustomRequestEvent
      * @param array<string, string> $vars
      */
     public function __construct(
-        ?Request $request = null,
+        Request $request = null,
         string $template = '',
         protected array $vars = [],
     ) {
@@ -40,7 +40,7 @@ class CustomTemplateEvent extends AbstractCustomRequestEvent
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array<string, string>
      */
     public function getVars(): array
     {
@@ -48,7 +48,7 @@ class CustomTemplateEvent extends AbstractCustomRequestEvent
     }
 
     /**
-     * @param array<string, mixed> $vars
+     * @param array<string, string> $vars
      */
     public function setVars(array $vars): self
     {

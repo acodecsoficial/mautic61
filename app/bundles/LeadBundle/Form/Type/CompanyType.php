@@ -7,7 +7,6 @@ use Mautic\CoreBundle\Form\DataTransformer\IdToEntityModelTransformer;
 use Mautic\CoreBundle\Form\EventListener\CleanFormSubscriber;
 use Mautic\CoreBundle\Form\Type\FormButtonsType;
 use Mautic\LeadBundle\Entity\Company;
-use Mautic\ProjectBundle\Form\Type\ProjectType;
 use Mautic\UserBundle\Entity\User;
 use Mautic\UserBundle\Form\Type\UserListType;
 use Symfony\Component\Form\AbstractType;
@@ -67,8 +66,6 @@ class CompanyType extends AbstractType
                 'required'   => false,
             ]
         );
-
-        $builder->add('projects', ProjectType::class);
 
         if (!empty($options['update_select'])) {
             $builder->add(

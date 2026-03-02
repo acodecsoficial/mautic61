@@ -21,6 +21,13 @@ return [
             ],
         ],
         'other'     => [
+            'mautic.cache.provider'           => [
+                'class'     => Mautic\CacheBundle\Cache\CacheProvider::class,
+                'arguments' => [
+                    'mautic.helper.core_parameters',
+                    'service_container',
+                ],
+            ],
             'mautic.cache.adapter.filesystem' => [
                 'class'     => Mautic\CacheBundle\Cache\Adapter\FilesystemTagAwareAdapter::class,
                 'arguments' => [
@@ -39,6 +46,16 @@ return [
                 ],
                 'tag'       => 'mautic.cache.adapter',
             ],
+            'mautic.cache.adapter.redis'      => [
+                'class'     => Mautic\CacheBundle\Cache\Adapter\RedisTagAwareAdapter::class,
+                'arguments' => [
+                    '%mautic.cache_adapter_redis%',
+                    '%mautic.cache_prefix%',
+                    '%mautic.cache_lifetime%',
+                    '%mautic.redis_primary_only%',
+                ],
+                'tag'       => 'mautic.cache.adapter',
+            ],
         ],
         'models'    => [],
         'validator' => [],
@@ -46,7 +63,6 @@ return [
 
     'parameters' => [
         'cache_adapter'           => 'mautic.cache.adapter.filesystem',
-        'cache_adapter_tag_aware' => 'mautic.cache.adapter.filesystem',
         'cache_prefix'            => '',
         'cache_lifetime'          => 86400,
         'cache_adapter_memcached' => [

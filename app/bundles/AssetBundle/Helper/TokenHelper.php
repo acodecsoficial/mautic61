@@ -6,8 +6,6 @@ use Mautic\AssetBundle\Model\AssetModel;
 
 class TokenHelper
 {
-    public const REGEX = '/{assetlink=(.*?)}/';
-
     public function __construct(
         protected AssetModel $model,
     ) {
@@ -17,7 +15,7 @@ class TokenHelper
     {
         $tokens = [];
 
-        preg_match_all(self::REGEX, $content, $matches);
+        preg_match_all('/{assetlink=(.*?)}/', $content, $matches);
         foreach ($matches[1] as $key => $assetId) {
             $token = $matches[0][$key];
 

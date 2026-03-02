@@ -2,13 +2,6 @@
 
 namespace MauticPlugin\MauticFocusBundle\Entity;
 
-use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\Delete;
-use ApiPlatform\Metadata\Get;
-use ApiPlatform\Metadata\GetCollection;
-use ApiPlatform\Metadata\Patch;
-use ApiPlatform\Metadata\Post;
-use ApiPlatform\Metadata\Put;
 use Doctrine\ORM\Mapping as ORM;
 use Mautic\ApiBundle\Serializer\Driver\ApiMetadataDriver;
 use Mautic\CoreBundle\Doctrine\Mapping\ClassMetadataBuilder;
@@ -16,113 +9,126 @@ use Mautic\CoreBundle\Entity\FormEntity;
 use Mautic\CoreBundle\Entity\UuidInterface;
 use Mautic\CoreBundle\Entity\UuidTrait;
 use Mautic\FormBundle\Entity\Form;
-use Mautic\ProjectBundle\Entity\ProjectTrait;
-use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Mapping\ClassMetadata;
 
-#[ApiResource(
-    operations: [
-        new GetCollection(uriTemplate: '/focus_items', security: "is_granted('focus:items:viewown')"),
-        new Get(uriTemplate: '/focus_items/{id}', security: "is_granted('focus:items:viewown')"),
-        new Post(uriTemplate: '/focus_items', security: "is_granted('focus:items:create')"),
-        new Put(uriTemplate: '/focus_items/{id}', security: "is_granted('focus:items:editown')"),
-        new Patch(uriTemplate: '/focus_items/{id}', security: "is_granted('focus:items:editother')"),
-        new Delete(uriTemplate: '/focus_items/{id}', security: "is_granted('focus:items:deleteown')"),
-    ],
-    normalizationContext: [
-        'groups'                  => ['focus:read'],
-        'swagger_definition_name' => 'Read',
-    ],
-    denormalizationContext: [
-        'groups'                  => ['focus:write'],
-        'swagger_definition_name' => 'Write',
-    ]
-)]
+/**
+ * @ApiResource(
+ *   attributes={
+ *     "security"="false",
+ *     "normalization_context"={
+ *       "groups"={
+ *         "focus:read"
+ *        },
+ *       "swagger_definition_name"="Read"
+ *     },
+ *     "denormalization_context"={
+ *       "groups"={
+ *         "focus:write"
+ *       },
+ *       "swagger_definition_name"="Write"
+ *     }
+ *   }
+ * )
+ */
 class Focus extends FormEntity implements UuidInterface
 {
     use UuidTrait;
-    use ProjectTrait;
 
     /**
      * @var int
+     *
+     * @Groups("focus:read")
      */
-    #[Groups(['focus:read'])]
     private $id;
 
     /**
      * @var string|null
+     *
+     * @Groups({"focus:read", "focus:write"})
      */
-    #[Groups(['focus:read', 'focus:write'])]
     private $description;
 
     /**
      * @var string|null
+     *
+     * @Groups({"focus:read", "focus:write"})
      */
-    #[Groups(['focus:read', 'focus:write'])]
     private $editor;
 
     /**
      * @var string|null
+     *
+     * @Groups({"focus:read", "focus:write"})
      */
-    #[Groups(['focus:read', 'focus:write'])]
     private $html;
 
     /**
      * @var string|null
+     *
+     * @Groups({"focus:read", "focus:write"})
      */
-    #[Groups(['focus:read', 'focus:write'])]
     private $htmlMode;
 
     /**
      * @var string
+     *
+     * @Groups({"focus:read", "focus:write"})
      */
-    #[Groups(['focus:read', 'focus:write'])]
     private $name;
 
-    #[Groups(['focus:read', 'focus:write'])]
+    /**
+     * @Groups({"focus:read", "focus:write"})
+     */
     private $category;
 
     /**
      * @var string
+     *
+     * @Groups({"focus:read", "focus:write"})
      */
-    #[Groups(['focus:read', 'focus:write'])]
     private $type;
 
     /**
      * @var string|null
+     *
+     * @Groups({"focus:read", "focus:write"})
      */
-    #[Groups(['focus:read', 'focus:write'])]
     private $website;
 
     /**
      * @var string
+     *
+     * @Groups({"focus:read", "focus:write"})
      */
-    #[Groups(['focus:read', 'focus:write'])]
     private $style;
 
     /**
      * @var \DateTimeInterface
+     *
+     * @Groups({"focus:read", "focus:write"})
      */
-    #[Groups(['focus:read', 'focus:write'])]
     private $publishUp;
 
     /**
      * @var \DateTimeInterface
+     *
+     * @Groups({"focus:read", "focus:write"})
      */
-    #[Groups(['focus:read', 'focus:write'])]
     private $publishDown;
 
     /**
      * @var array<mixed>
+     *
+     * @Groups({"focus:read", "focus:write"})
      */
-    #[Groups(['focus:read', 'focus:write'])]
     private $properties = [];
 
     /**
      * @var array
+     *
+     * @Groups({"focus:read", "focus:write"})
      */
-    #[Groups(['focus:read', 'focus:write'])]
     private $utmTags = [];
 
     /**
@@ -134,11 +140,6 @@ class Focus extends FormEntity implements UuidInterface
      * @var string|null
      */
     private $cache;
-
-    public function __construct()
-    {
-        $this->initializeProjects();
-    }
 
     public static function loadValidatorMetadata(ClassMetadata $metadata): void
     {
@@ -217,7 +218,6 @@ class Focus extends FormEntity implements UuidInterface
         $builder->addNullableField('html', 'text');
 
         static::addUuidField($builder);
-        self::addProjectsField($builder, 'focus_projects_xref', 'focus_id');
     }
 
     /**
@@ -225,7 +225,7 @@ class Focus extends FormEntity implements UuidInterface
      */
     public static function loadApiMetadata(ApiMetadataDriver $metadata): void
     {
-        $metadata->setGroupPrefix('focus')
+        $metadata
             ->addListProperties(
                 [
                     'id',
@@ -251,8 +251,6 @@ class Focus extends FormEntity implements UuidInterface
                 ]
             )
             ->build();
-
-        self::addProjectsInLoadApiMetadata($metadata, 'focus');
     }
 
     public function toArray(): array

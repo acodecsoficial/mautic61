@@ -66,9 +66,7 @@
 								{{ form_widget(form.email, {'attr' : {'placeholder' : form.email.vars.label }}) }}
 								{{ form_errors(form.email) }}
 							</div>
-                            {% if isSamlUser is empty %}
-							    {{ form_widget(form.plainPassword, {'attr' : {'placeholder' : form.plainPassword.vars.label }}) }}
-                            {% endif %}
+							{{ form_widget(form.plainPassword, {'attr' : {'placeholder' : form.plainPassword.vars.label }}) }}
 						</div>
 					</div>
 				</div>

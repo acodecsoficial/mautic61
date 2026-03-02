@@ -279,12 +279,6 @@
                         {% endif %}
                     {% endset %}
 
-                    {% set allowedRemoteDomainsContent %}
-                        {% if form.allowed_remote_domains is defined %}
-                            {{ form_row(form.allowed_remote_domains) }}
-                        {% endif %}
-                    {% endset %}
-
                     {% include '@MauticCore/Helper/accordion.html.twig' with {
                         'items': [
                             {
@@ -299,10 +293,6 @@
                                 'title': 'mautic.core.config.link_shorteners',
                                 'padding_inline': false,
                                 'content': shortenerContent
-                            },
-                            {
-                                'title': 'mautic.core.config.allowed.remote.domains.title',
-                                'content': allowedRemoteDomainsContent
                             }
                         ]
                     } %}

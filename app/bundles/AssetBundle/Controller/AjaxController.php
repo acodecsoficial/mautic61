@@ -39,6 +39,7 @@ class AjaxController extends CommonAjaxController
         $path       = InputHelper::string($request->request->get('path', ''));
         $dispatcher = $this->dispatcher;
         $name       = AssetEvents::ASSET_ON_REMOTE_BROWSE;
+
         if (!$dispatcher->hasListeners($name)) {
             return $this->sendJsonResponse(['success' => 0]);
         }
@@ -47,13 +48,11 @@ class AjaxController extends CommonAjaxController
         $integration = $integrationHelper->getIntegrationObject($provider);
 
         $event = new RemoteAssetBrowseEvent($integration);
+
         $dispatcher->dispatch($event, $name);
 
         if (!$adapter = $event->getAdapter()) {
-            return $this->sendJsonResponse([
-                'success' => 0,
-                'message' => $event->getFailureMessage() ?? null,
-            ]);
+            return $this->sendJsonResponse(['success' => 0]);
         }
 
         $connector = new Filesystem($adapter);

@@ -7,7 +7,6 @@ namespace Mautic\LeadBundle\Field\Command;
 use Mautic\LeadBundle\Field\SchemaDefinition;
 use Mautic\LeadBundle\Model\FieldModel;
 use Mautic\LeadBundle\Model\LeadModel;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\Table;
 use Symfony\Component\Console\Input\InputInterface;
@@ -15,12 +14,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
-#[AsCommand(
-    name: 'mautic:fields:analyse',
-    description: 'Analyse actual usage of custom columns in leads table.'
-)]
 class AnalyseCustomFieldCommand extends Command
 {
+    protected static $defaultDescription = 'Analyse actual usage of custom columns in leads table.';
+
     public function __construct(private FieldModel $fieldModel, private LeadModel $leadModel, private TranslatorInterface $translator)
     {
         parent::__construct();
@@ -32,6 +29,7 @@ class AnalyseCustomFieldCommand extends Command
     protected function configure(): void
     {
         $this
+            ->setName('mautic:fields:analyse')
             ->addOption(
                 'display-table',
                 't',
@@ -47,7 +45,7 @@ class AnalyseCustomFieldCommand extends Command
     {
         $displayAsTable = $input->getOption('display-table');
 
-        $fieldDetails = $this->getCustomFieldDetails();
+        $fieldDetails   = $this->getCustomFieldDetails();
         if (empty($fieldDetails)) {
             $output->writeln('No custom field(s) to analyse!!!');
 
@@ -63,7 +61,7 @@ class AnalyseCustomFieldCommand extends Command
 
         $analysisDetails = array_merge_recursive($fieldDetails, $fieldLengths);
 
-        $headers = [
+        $headers   = [
             $this->translator->trans('mautic.lead.field.analyse.header.name'),
             $this->translator->trans('mautic.lead.field.analyse.header.alias'),
             $this->translator->trans('mautic.lead.field.analyse.header.length'),
@@ -72,15 +70,14 @@ class AnalyseCustomFieldCommand extends Command
             $this->translator->trans('mautic.lead.field.analyse.header.indexed'),
         ];
 
-        $rows = [];
+        $rows      = [];
         foreach ($analysisDetails as $analysisDetail) {
-            $maxLength        = (int) $analysisDetail['max_length'] ?: 0;
-            $columnLength     = (int) $analysisDetail['char_length_limit'] ?: 0;
-            $suggestedMaxSize = $this->getSuggestedMaxSize($columnLength, $maxLength);
+            $maxLength          = (int) $analysisDetail['max_length'] ?: 0;
+            $columnLength       = (int) $analysisDetail['char_length_limit'] ?: 0;
+            $suggestedMaxSize   = $this->getSuggestedMaxSize($columnLength, $maxLength);
 
-            $label  = $analysisDetail['label'];
             $rows[] = [
-                "\"$label\"",
+                $analysisDetail['label'],
                 $analysisDetail['alias'],
                 $columnLength,
                 $maxLength,
@@ -110,8 +107,8 @@ class AnalyseCustomFieldCommand extends Command
      */
     private function getCustomFieldDetails(): array
     {
-        $fields       = $this->fieldModel->getLeadFieldCustomFields();
-        $fieldSchemas = $this->fieldModel->getLeadFieldCustomFieldSchemaDetails();
+        $fields         = $this->fieldModel->getLeadFieldCustomFields();
+        $fieldSchemas   = $this->fieldModel->getLeadFieldCustomFieldSchemaDetails();
 
         $fieldDetails = [];
         foreach ($fields as $field) {
@@ -139,10 +136,6 @@ class AnalyseCustomFieldCommand extends Command
     private function getSuggestedMaxSize(int $columnLength, int $utilisedLength): int
     {
         if ($utilisedLength > 0) {
-            if (191 < $utilisedLength) {
-                return $columnLength;
-            }
-
             return min($utilisedLength * 2, $columnLength, 191);
         }
 

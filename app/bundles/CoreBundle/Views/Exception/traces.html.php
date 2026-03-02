@@ -22,7 +22,7 @@ $formatArgs = function ($args) use (&$formatArgs) {
                 $formattedValue = str_replace("\n", '', var_export(htmlspecialchars((string) $item[1]), true));
             }
         } elseif (is_object($item)) {
-            $formattedValue = $item::class;
+            $formattedValue = get_class($item);
         } elseif (is_string($item)) {
             $formattedValue = '<em>'.htmlspecialchars($item).'</em>';
         } elseif (is_array($item)) {

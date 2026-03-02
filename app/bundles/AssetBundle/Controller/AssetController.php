@@ -257,7 +257,7 @@ class AssetController extends FormController
                 'activeAsset'      => $activeAsset,
                 'assetDownloadUrl' => $model->generateUrl($activeAsset),
             ],
-            'contentTemplate' => '@MauticAsset/Modules/preview.html.twig',
+            'contentTemplate' => '@MauticAsset/Asset/preview.html.twig',
             'passthroughVars' => [
                 'route' => false,
             ],

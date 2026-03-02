@@ -26,7 +26,7 @@ class EscapeTransformer implements DataTransformerInterface
      *
      * @return array<string|int|float|array<string|int|float>>|string|int|float
      */
-    public function transform(mixed $value): mixed
+    public function transform($value)
     {
         if (is_array($value)) {
             return array_map(fn ($value) => $this->unescape($value), $value);
@@ -40,7 +40,7 @@ class EscapeTransformer implements DataTransformerInterface
      *
      * @return array<string|int|float|array<string|int|float>>|string|int|float
      */
-    public function reverseTransform(mixed $value): mixed
+    public function reverseTransform($value)
     {
         if (is_array($value)) {
             return array_map(fn ($value) => $this->escape($value), $value);

@@ -23,7 +23,7 @@ class FieldToOrderTransformer implements DataTransformerInterface
      *
      * @return LeadField|null
      */
-    public function transform(mixed $order): mixed
+    public function transform($order)
     {
         if (!$order) {
             return null;
@@ -39,7 +39,7 @@ class FieldToOrderTransformer implements DataTransformerInterface
      *
      * @return int|null
      */
-    public function reverseTransform(mixed $field): mixed
+    public function reverseTransform($field)
     {
         if (null === $field) {
             return null;

@@ -16,7 +16,7 @@ class StatDevice
      */
     private $id;
 
-    private ?Stat $stat = null;
+    private ?Stat $stat;
 
     /**
      * @var LeadDevice|null

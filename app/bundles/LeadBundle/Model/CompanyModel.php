@@ -48,6 +48,11 @@ class CompanyModel extends CommonFormModel implements AjaxLookupModelInterface
     use RequestTrait;
 
     /**
+     * @var FieldModel
+     */
+    protected $leadFieldModel;
+
+    /**
      * @var array
      */
     protected $companyFields;
@@ -60,7 +65,7 @@ class CompanyModel extends CommonFormModel implements AjaxLookupModelInterface
     private bool $repoSetup = false;
 
     public function __construct(
-        protected FieldModel $leadFieldModel,
+        FieldModel $leadFieldModel,
         protected EmailValidator $emailValidator,
         protected CompanyDeduper $companyDeduper,
         EntityManager $em,
@@ -73,6 +78,8 @@ class CompanyModel extends CommonFormModel implements AjaxLookupModelInterface
         CoreParametersHelper $coreParametersHelper,
         private FieldList $fieldList,
     ) {
+        $this->leadFieldModel = $leadFieldModel;
+
         parent::__construct($em, $security, $dispatcher, $router, $translator, $userHelper, $mauticLogger, $coreParametersHelper);
     }
 
@@ -260,7 +267,7 @@ class CompanyModel extends CommonFormModel implements AjaxLookupModelInterface
                         $newValue = implode('|', $newValue);
                     }
 
-                    if ($curValue !== $newValue && (strlen((string) $newValue) > 0 || $overwriteWithBlank)) {
+                    if ($curValue !== $newValue && (strlen($newValue) > 0 || $overwriteWithBlank)) {
                         $field['value'] = $newValue;
                         $company->addUpdatedField($alias, $newValue, $curValue);
                     }
@@ -559,21 +566,18 @@ class CompanyModel extends CommonFormModel implements AjaxLookupModelInterface
             );
         }
 
-        return $this->getRepository()->getAjaxSimpleList($composite, ['filterVar' => $filterVal.'%'], $column, $valueColumn);
+        return $this->getRepository()->getAjaxSimpleList($composite, ['filterVar' => $filterVal.'%', 'onlyNames' => true], $column, $valueColumn);
     }
 
     /**
      * Get list of entities for autopopulate fields.
      *
-     * @param string                   $type
-     * @param string|array<int,string> $filter
-     * @param int                      $limit
-     * @param int                      $start
-     * @param array<string, mixed>     $options
-     *
-     * @return array<mixed>
+     * @param string         $type
+     * @param mixed[]|string $filter
+     * @param int            $limit
+     * @param int            $start
      */
-    public function getLookupResults($type, $filter = '', $limit = 10, $start = 0, array $options = []): array
+    public function getLookupResults($type, $filter = '', $limit = 10, $start = 0): array
     {
         $results = [];
         switch ($type) {
@@ -625,7 +629,7 @@ class CompanyModel extends CommonFormModel implements AjaxLookupModelInterface
     /**
      * @throws MethodNotAllowedHttpException
      */
-    protected function dispatchEvent($action, &$entity, $isNew = false, ?Event $event = null): ?Event
+    protected function dispatchEvent($action, &$entity, $isNew = false, Event $event = null): ?Event
     {
         if (!$entity instanceof Company) {
             throw new MethodNotAllowedHttpException(['Email']);
@@ -884,7 +888,7 @@ class CompanyModel extends CommonFormModel implements AjaxLookupModelInterface
             }
 
             if (isset($fieldData[$entityField['alias']])) {
-                $fieldData = $this->getCleanedFieldData($entityField, $fieldData);
+                $fieldData[$entityField['alias']] = InputHelper::_($fieldData[$entityField['alias']], 'string');
 
                 if ('NULL' === $fieldData[$entityField['alias']]) {
                     $fieldData[$entityField['alias']] = null;
@@ -999,20 +1003,5 @@ class CompanyModel extends CommonFormModel implements AjaxLookupModelInterface
         $uniqueData = $this->companyDeduper->getUniqueData($updateData);
 
         return (bool) array_diff_assoc($updateData, $uniqueData);
-    }
-
-    /**
-     * @param array<mixed> $fieldData
-     *
-     * @return array<mixed>
-     */
-    private function getCleanedFieldData(mixed $entityField, array $fieldData): array
-    {
-        $fieldData[$entityField['alias']] = InputHelper::_(
-            $fieldData[$entityField['alias']],
-            'html' === $entityField['type'] ? 'html' : 'string'
-        );
-
-        return $fieldData;
     }
 }

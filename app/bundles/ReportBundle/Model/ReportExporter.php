@@ -2,7 +2,6 @@
 
 namespace Mautic\ReportBundle\Model;
 
-use Mautic\CoreBundle\Event\JobExtendTimeEvent;
 use Mautic\ReportBundle\Adapter\ReportDataAdapter;
 use Mautic\ReportBundle\Entity\Scheduler;
 use Mautic\ReportBundle\Event\ReportScheduleSendEvent;
@@ -78,7 +77,7 @@ class ReportExporter
                 if ($this->reportExportOptions->getNumberOfProcessedResults() >= $totalResults) {
                     break;
                 }
-                $this->eventDispatcher->dispatch(new JobExtendTimeEvent());
+
                 $this->reportExportOptions->nextBatch();
             }
 

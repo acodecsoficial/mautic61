@@ -14,12 +14,13 @@ use Mautic\CoreBundle\Entity\CommonRepository;
 interface AjaxLookupModelInterface
 {
     /**
-     * @param string|array<int,string> $filter
-     * @param array<string, mixed>     $options
+     * @param string $filter
+     * @param int    $limit
+     * @param int    $start
      *
      * @return mixed
      */
-    public function getLookupResults(string $type, string|array $filter = '', int $limit = 10, int $start = 0, array $options = []);
+    public function getLookupResults($type, $filter = '', $limit = 10, $start = 0);
 
     /**
      * @return CommonRepository<T>

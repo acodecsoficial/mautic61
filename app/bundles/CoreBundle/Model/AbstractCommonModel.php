@@ -8,7 +8,6 @@ use Mautic\CoreBundle\Doctrine\Paginator\SimplePaginator;
 use Mautic\CoreBundle\DTO\GlobalSearchFilterDTO;
 use Mautic\CoreBundle\Entity\CommonRepository;
 use Mautic\CoreBundle\Entity\FormEntity;
-use Mautic\CoreBundle\Exception\InvalidDecodedStringException;
 use Mautic\CoreBundle\Helper\ClickthroughHelper;
 use Mautic\CoreBundle\Helper\CoreParametersHelper;
 use Mautic\CoreBundle\Helper\UserHelper;
@@ -140,11 +139,7 @@ abstract class AbstractCommonModel implements MauticModelInterface
      */
     public function decodeArrayFromUrl($string, $urlDecode = true)
     {
-        try {
-            return ClickthroughHelper::decodeArrayFromUrl($string, $urlDecode);
-        } catch (InvalidDecodedStringException) {
-            return [];
-        }
+        return ClickthroughHelper::decodeArrayFromUrl($string, $urlDecode);
     }
 
     /**

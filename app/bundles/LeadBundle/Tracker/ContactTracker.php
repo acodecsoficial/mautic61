@@ -10,7 +10,6 @@ use Mautic\LeadBundle\Entity\Lead;
 use Mautic\LeadBundle\Entity\LeadRepository;
 use Mautic\LeadBundle\Event\LeadChangeEvent;
 use Mautic\LeadBundle\Event\LeadEvent;
-use Mautic\LeadBundle\Event\LeadGetCurrentEvent;
 use Mautic\LeadBundle\LeadEvents;
 use Mautic\LeadBundle\Model\DefaultValueTrait;
 use Mautic\LeadBundle\Model\FieldModel;
@@ -26,11 +25,15 @@ class ContactTracker
 
     private ?Lead $systemContact = null;
 
-    private ?Lead $trackedContact = null;
+    /**
+     * @var Lead|null
+     */
+    private $trackedContact;
 
-    private ?bool $useSystemContact = null;
-
-    private bool $contactLastActiveLogged = false;
+    /**
+     * @var FieldModel
+     */
+    private $leadFieldModel;
 
     public function __construct(
         private LeadRepository $leadRepository,
@@ -42,8 +45,9 @@ class ContactTracker
         private RequestStack $requestStack,
         private CoreParametersHelper $coreParametersHelper,
         private EventDispatcherInterface $dispatcher,
-        private FieldModel $leadFieldModel,
+        FieldModel $leadFieldModel,
     ) {
+        $this->leadFieldModel         = $leadFieldModel;
     }
 
     /**
@@ -71,9 +75,9 @@ class ContactTracker
         }
 
         // Log last active for the tracked contact
-        if (!$this->contactLastActiveLogged) {
+        if (!defined('MAUTIC_LEAD_LASTACTIVE_LOGGED')) {
             $this->leadRepository->updateLastActive($this->trackedContact->getId());
-            $this->contactLastActiveLogged = true;
+            define('MAUTIC_LEAD_LASTACTIVE_LOGGED', 1);
         }
 
         return $this->trackedContact;
@@ -128,7 +132,7 @@ class ContactTracker
     /**
      * System contact bypasses cookie tracking.
      */
-    public function setSystemContact(?Lead $lead = null): void
+    public function setSystemContact(Lead $lead = null): void
     {
         if (null !== $lead) {
             $this->logger->debug("LEAD: {$lead->getId()} set as system lead.");
@@ -156,22 +160,6 @@ class ContactTracker
         return $this->contactTrackingService->getTrackedIdentifier();
     }
 
-    public function setUseSystemContact(?bool $useSystemContact): void
-    {
-        $this->useSystemContact = $useSystemContact;
-    }
-
-    /**
-     * Resets cache.
-     */
-    public function reset(): void
-    {
-        $this->trackedContact          = null;
-        $this->contactLastActiveLogged = false;
-        $this->deviceTracker->reset();
-        $this->ipLookupHelper->reset();
-    }
-
     /**
      * @return Lead|null
      */
@@ -195,13 +183,6 @@ class ContactTracker
      */
     private function getCurrentContact()
     {
-        $event = new LeadGetCurrentEvent($this->getRequest());
-        $this->dispatcher->dispatch($event);
-
-        if ($contact = $event->getContact()) {
-            return $contact;
-        }
-
         if ($lead = $this->getContactByTrackedDevice()) {
             return $lead;
         }
@@ -216,8 +197,9 @@ class ContactTracker
     {
         $lead = null;
 
-        // Return null for leads that are from a non-trackable request (IP, bot, privacy signal, prefetch checks)
-        if (!$this->ipLookupHelper->isRequestTrackable()) {
+        // Return null for leads that are from a non-trackable IP, prevent anonymous lead with a non-trackable IP to be tracked
+        $ip = $this->ipLookupHelper->getIpAddress();
+        if ($ip && !$ip->isTrackable()) {
             return $lead;
         }
 
@@ -248,8 +230,8 @@ class ContactTracker
     {
         $ip = $this->ipLookupHelper->getIpAddress();
         // if no trackingId cookie set the lead is not tracked yet so create a new one
-        // Don't save leads from non-trackable requests (IP, bot, privacy signal, prefetch checks)
-        if (!$this->ipLookupHelper->isRequestTrackable()) {
+        if ($ip && !$ip->isTrackable()) {
+            // Don't save leads that are from a non-trackable IP by default
             return $this->createNewContact($ip, false);
         }
 
@@ -270,7 +252,7 @@ class ContactTracker
     /**
      * @param bool $persist
      */
-    private function createNewContact(?IpAddress $ip = null, $persist = true): Lead
+    private function createNewContact(IpAddress $ip = null, $persist = true): Lead
     {
         // let's create a lead
         $lead = new Lead();
@@ -296,7 +278,7 @@ class ContactTracker
         return $lead;
     }
 
-    private function hydrateCustomFieldData(?Lead $lead = null): void
+    private function hydrateCustomFieldData(Lead $lead = null): void
     {
         if (null === $lead) {
             return;
@@ -309,11 +291,7 @@ class ContactTracker
 
     private function useSystemContact(): bool
     {
-        if (null !== $this->useSystemContact) {
-            return $this->useSystemContact;
-        }
-
-        return $this->isUserSession() || $this->systemContact || defined('IN_MAUTIC_CONSOLE') || null === $this->getRequest();
+        return $this->isUserSession() || $this->systemContact || defined('IN_MAUTIC_CONSOLE') || null === $this->requestStack->getCurrentRequest();
     }
 
     private function isUserSession(): bool
@@ -338,7 +316,8 @@ class ContactTracker
 
     private function generateTrackingCookies(): void
     {
-        if ($this->trackedContact->getId() && $request = $this->getRequest()) {
+        $request = $this->requestStack->getCurrentRequest();
+        if ($leadId = $this->trackedContact->getId() && null !== $request) {
             $this->deviceTracker->createDeviceFromUserAgent($this->trackedContact, $request->server->get('HTTP_USER_AGENT'));
         }
     }

@@ -59,22 +59,8 @@ class RedirectModel extends FormModel
      *
      * @return string
      */
-    public function generateRedirectUrl(
-        Redirect $redirect,
-        $clickthrough = [],
-        $shortenUrl = false,
-        $utmTags = [],
-    ) {
-        if (count(func_get_args()) > 2) {
-            $deprecation = '$shortenUrl is deprecated. Please use \Mautic\PageBundle\Model\RedirectModel::shortenUrl.';
-            trigger_error($deprecation, E_USER_DEPRECATED);
-        }
-
-        if (count(func_get_args()) > 3) {
-            $deprecation = '$utmTags is deprecated. Please use \Mautic\PageBundle\Model\RedirectModel::applyUtmTags.';
-            trigger_error($deprecation, E_USER_DEPRECATED);
-        }
-
+    public function generateRedirectUrl(Redirect $redirect, $clickthrough = [], $shortenUrl = false, $utmTags = [])
+    {
         if ($this->dispatcher->hasListeners(PageEvents::ON_REDIRECT_GENERATE)) {
             $event = new RedirectGenerationEvent($redirect, $clickthrough);
             $this->dispatcher->dispatch($event, PageEvents::ON_REDIRECT_GENERATE);
@@ -89,12 +75,14 @@ class RedirectModel extends FormModel
             $clickthrough
         );
 
-        if ([] !== $utmTags) {
-            $url = $this->applyUtmTags($url, $utmTags);
+        if (!empty($utmTags)) {
+            $utmTags         = $this->getUtmTagsForUrl($utmTags);
+            $appendUtmString = http_build_query($utmTags, '', '&');
+            $url             = UrlHelper::appendQueryToUrl($url, $appendUtmString);
         }
 
         if ($shortenUrl) {
-            $url = $this->shortenUrl($url);
+            $url = $this->shortener->shortenUrl($url);
         }
 
         return $url;
@@ -182,8 +170,10 @@ class RedirectModel extends FormModel
 
     /**
      * Create a Redirect entity for URL.
+     *
+     * @return Redirect
      */
-    public function createRedirectEntity($url): Redirect
+    public function createRedirectEntity($url)
     {
         $redirect = new Redirect();
         $redirect->setUrl($url);
@@ -192,25 +182,5 @@ class RedirectModel extends FormModel
         $this->setTimestamps($redirect, true);
 
         return $redirect;
-    }
-
-    /**
-     * @param array<mixed> $utmTags
-     */
-    public function applyUtmTags(string $url, array $utmTags): string
-    {
-        if ([] === $utmTags) {
-            return $url;
-        }
-
-        $utmTags         = $this->getUtmTagsForUrl($utmTags);
-        $appendUtmString = http_build_query($utmTags, '', '&');
-
-        return UrlHelper::appendQueryToUrl($url, $appendUtmString);
-    }
-
-    public function shortenUrl(string $url): string
-    {
-        return $this->shortener->shortenUrl($url);
     }
 }

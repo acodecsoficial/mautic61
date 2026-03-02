@@ -2,21 +2,25 @@
 
 namespace Mautic\LeadBundle\EventListener;
 
-use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
+use Doctrine\Common\EventSubscriber;
 use Doctrine\DBAL\Types\StringType;
 use Doctrine\ORM\Tools\Event\GenerateSchemaEventArgs;
 use Doctrine\ORM\Tools\ToolEvents;
 use Mautic\LeadBundle\Field\SchemaDefinition;
 use Monolog\Logger;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
-#[AsDoctrineListener(ToolEvents::postGenerateSchema)]
-class DoctrineSubscriber
+class DoctrineSubscriber implements EventSubscriber
 {
     public function __construct(
-        #[Autowire(service: 'monolog.logger.mautic')]
         private Logger $logger,
     ) {
+    }
+
+    public function getSubscribedEvents(): array
+    {
+        return [
+            ToolEvents::postGenerateSchema,
+        ];
     }
 
     public function postGenerateSchema(GenerateSchemaEventArgs $args): void

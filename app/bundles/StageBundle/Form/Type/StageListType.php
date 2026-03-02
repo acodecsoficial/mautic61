@@ -20,6 +20,7 @@ class StageListType extends AbstractType
 
     public function __construct(private StageModel $stageModel)
     {
+        $this->stageModel = $stageModel;
     }
 
     public function configureOptions(OptionsResolver $resolver): void

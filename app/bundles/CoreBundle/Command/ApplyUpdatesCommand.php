@@ -6,7 +6,6 @@ use Mautic\CoreBundle\Exception\UpdateFailedException;
 use Mautic\CoreBundle\Helper\CoreParametersHelper;
 use Mautic\CoreBundle\Helper\ProgressBarHelper;
 use Mautic\CoreBundle\Update\StepProvider;
-use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Helper\SymfonyQuestionHelper;
@@ -19,10 +18,6 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 /**
  * CLI Command to update the application.
  */
-#[AsCommand(
-    name: 'mautic:update:apply',
-    description: 'Updates the Mautic application'
-)]
 class ApplyUpdatesCommand extends Command
 {
     public function __construct(
@@ -35,7 +30,7 @@ class ApplyUpdatesCommand extends Command
 
     protected function configure()
     {
-        $this
+        $this->setName('mautic:update:apply')
             ->setDefinition(
                 [
                     new InputOption(
@@ -144,4 +139,6 @@ EOT
 
         return 0;
     }
+
+    protected static $defaultDescription = 'Updates the Mautic application';
 }

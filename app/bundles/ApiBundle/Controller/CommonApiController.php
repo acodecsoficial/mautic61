@@ -3,11 +3,11 @@
 namespace Mautic\ApiBundle\Controller;
 
 use Doctrine\Persistence\ManagerRegistry;
+use FOS\RestBundle\View\View;
 use Mautic\ApiBundle\ApiEvents;
 use Mautic\ApiBundle\Event\ApiEntityEvent;
 use Mautic\ApiBundle\Helper\EntityResultHelper;
 use Mautic\CategoryBundle\Entity\Category;
-use Mautic\CoreBundle\Exception\DeleteEntityDependencyException;
 use Mautic\CoreBundle\Factory\ModelFactory;
 use Mautic\CoreBundle\Helper\AppVersion;
 use Mautic\CoreBundle\Helper\CoreParametersHelper;
@@ -16,6 +16,7 @@ use Mautic\CoreBundle\Model\FormModel;
 use Mautic\CoreBundle\Security\Permissions\CorePermissions;
 use Mautic\CoreBundle\Translation\Translator;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\Form\Form;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -104,15 +105,7 @@ class CommonApiController extends FetchCommonApiController
                 continue;
             }
 
-            try {
-                $this->model->deleteEntity($entity);
-            } catch (DeleteEntityDependencyException $e) {
-                $msg = $this->translator->trans('mautic.api.dependent.entity.delete.error',
-                    ['%id%'   => $entity->getId()], 'validators');
-                $this->setBatchError($key, $msg, $e->getCode(), $errors, $entities, $entity);
-                continue;
-            }
-
+            $this->model->deleteEntity($entity);
             $this->doctrine->getManager()->detach($entity);
         }
 
@@ -135,28 +128,21 @@ class CommonApiController extends FetchCommonApiController
     public function deleteEntityAction($id)
     {
         $entity = $this->model->getEntity($id);
+        if (null !== $entity) {
+            if (!$this->checkEntityAccess($entity, 'delete')) {
+                return $this->accessDenied();
+            }
 
-        if (null === $entity) {
-            return $this->notFound();
-        }
-
-        if (!$this->checkEntityAccess($entity, 'delete')) {
-            return $this->accessDenied();
-        }
-
-        try {
             $this->model->deleteEntity($entity);
-        } catch (DeleteEntityDependencyException $e) {
-            $msg = $this->translator->trans('mautic.api.dependent.entity.delete.error',
-                ['%id%'   => $entity->getId()], 'validators');
 
-            return $this->returnError($msg, $e->getCode());
+            $this->preSerializeEntity($entity);
+            $view = $this->view([$this->entityNameOne => $entity], Response::HTTP_OK);
+            $this->setSerializationContext($view);
+
+            return $this->handleView($view);
         }
-        $this->preSerializeEntity($entity);
-        $view = $this->view([$this->entityNameOne => $entity], Response::HTTP_OK);
-        $this->setSerializationContext($view);
 
-        return $this->handleView($view);
+        return $this->notFound();
     }
 
     /**
@@ -432,7 +418,7 @@ class CommonApiController extends FetchCommonApiController
         }
 
         if (-1 === $lastEntityIndex || $lastEntityIndex === $key) {
-            $this->detachEntity($entity);
+            $this->doctrine->getManager()->detach($entity);
         }
 
         $this->inBatchMode = false;
@@ -489,7 +475,6 @@ class CommonApiController extends FetchCommonApiController
                 if (!$this->checkEntityAccess($entity, 'publish')) {
                     if ('new' === $action) {
                         $parameters['isPublished'] = 0;
-                        unset($parameters['publishUp'], $parameters['publishDown']);
                     } else {
                         unset($parameters['isPublished'], $parameters['publishUp'], $parameters['publishDown']);
                     }
@@ -602,13 +587,5 @@ class CommonApiController extends FetchCommonApiController
 
             $entity->setCategory($category);
         }
-    }
-
-    /**
-     * Entity not to be detached in case of Lead Batch API.
-     */
-    protected function detachEntity(object $entity): void
-    {
-        $this->doctrine->getManager()->detach($entity);
     }
 }

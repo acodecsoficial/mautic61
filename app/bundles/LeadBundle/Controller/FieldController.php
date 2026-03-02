@@ -3,8 +3,6 @@
 namespace Mautic\LeadBundle\Controller;
 
 use Mautic\CoreBundle\Controller\FormController;
-use Mautic\CoreBundle\Exception\DeleteEntitiesDependencyException;
-use Mautic\CoreBundle\Exception\DeleteEntityDependencyException;
 use Mautic\CoreBundle\Exception\SchemaException;
 use Mautic\LeadBundle\Entity\LeadField;
 use Mautic\LeadBundle\Field\Exception\AbortColumnCreateException;
@@ -26,7 +24,7 @@ class FieldController extends FormController
      *
      * @return array|JsonResponse|RedirectResponse|Response
      */
-    public function indexAction(Request $request, FieldModel $fieldModel, $page = 1)
+    public function indexAction(Request $request, $page = 1)
     {
         // set some permissions
         $permissions = $this->security->isGranted(['lead:fields:view', 'lead:fields:full'], 'RETURN_ARRAY');
@@ -41,30 +39,25 @@ class FieldController extends FormController
 
         $limit  = $session->get('mautic.leadfield.limit', $this->coreParametersHelper->get('default_pagelimit'));
         $search = $request->get('search', $session->get('mautic.leadfield.filter', ''));
-        $session->set('mautic.leadfield.filter', $search);
+        $session->set('mautic.leadfilter.filter', $search);
 
         // do some default filtering
-        $orderBy    = $request->getSession()->get('mautic.leadfield.orderby', 'f.order');
-        $orderByDir = $request->getSession()->get('mautic.leadfield.orderbydir', 'ASC');
+        $orderBy    = $request->getSession()->get('mautic.leadfilter.orderby', 'f.order');
+        $orderByDir = $request->getSession()->get('mautic.leadfilter.orderbydir', 'ASC');
 
         $start = (1 === $page) ? 0 : (($page - 1) * $limit);
         if ($start < 0) {
             $start = 0;
         }
 
-        $fields = $fieldModel->getEntities([
+        $search  = $request->get('search', $session->get('mautic.lead.emailtoken.filter', ''));
+
+        $session->set('mautic.lead.emailtoken.filter', $search);
+
+        $fields = $this->getModel('lead.field')->getEntities([
             'start'      => $start,
             'limit'      => $limit,
-            'filter'     => [
-                'string' => $search,
-                'force'  => [
-                    [
-                        'column' => 'f.columnIsNotRemoved',
-                        'value'  => false,
-                        'expr'   => 'eq',
-                    ],
-                ],
-            ],
+            'filter'     => ['string' => $search],
             'orderBy'    => $orderBy,
             'orderByDir' => $orderByDir,
         ]);
@@ -306,7 +299,7 @@ class FieldController extends FormController
                         try {
                             $model->saveEntity($field, $this->getFormButton($form, ['buttons', 'save'])->isClicked());
                         } catch (AbortColumnUpdateException) {
-                            $flashMessage = $this->translator->trans('mautic.lead.field.update_pushed_to_background');
+                            $flashMessage = $this->translator->trans('mautic.lead.field.pushed_to_background');
                         } catch (SchemaException $e) {
                             $flashMessage = $e->getMessage();
                             $form['alias']->addError(new FormError($e->getMessage()));
@@ -438,9 +431,24 @@ class FieldController extends FormController
                 return $this->accessDenied();
             }
 
-            try {
+            $segments = [];
+            foreach ($model->getFieldSegments($field) as $segment) {
+                $segments[] = sprintf('"%s" (%d)', $segment->getName(), $segment->getId());
+            }
+
+            if (count($segments)) {
+                $flashMessage = [
+                    'type'    => 'error',
+                    'msg'     => 'mautic.core.notice.used.field',
+                    'msgVars' => [
+                        '%name%'     => $field->getLabel(),
+                        '%id%'       => $objectId,
+                        '%segments%' => implode(', ', $segments),
+                    ],
+                ];
+            } else {
                 $model->deleteEntity($field);
-                $flashes[] = [
+                $flashMessage = [
                     'type'    => 'notice',
                     'msg'     => 'mautic.core.notice.deleted',
                     'msgVars' => [
@@ -448,14 +456,9 @@ class FieldController extends FormController
                         '%id%'   => $objectId,
                     ],
                 ];
-            } catch (DeleteEntityDependencyException $exception) {
-                foreach ($exception->getErrors() as $error) {
-                    $flashes[] = [
-                        'type' => 'error',
-                        'msg'  => $error,
-                    ];
-                }
             }
+
+            $flashes[] = $flashMessage;
         } // else don't do anything
 
         return $this->postActionRedirect(
@@ -496,25 +499,60 @@ class FieldController extends FormController
 
             // Loop over the IDs to perform access checks pre-delete
             foreach ($ids as $objectId) {
-                $flashes = array_merge($flashes,
-                    $this->checkEntityForDeletion($objectId, $deleteIds, $postActionVars));
+                $entity = $model->getEntity($objectId);
+
+                if (null === $entity) {
+                    $flashes[] = [
+                        'type'    => 'error',
+                        'msg'     => 'mautic.lead.field.error.notfound',
+                        'msgVars' => ['%id%' => $objectId],
+                    ];
+                } elseif ($entity->isFixed()) {
+                    $flashes[] = $this->accessDenied(true);
+                } elseif ($model->isLocked($entity)) {
+                    $flashes[] = $this->isLocked($postActionVars, $entity, 'lead.field', true);
+                } else {
+                    $deleteIds[] = $objectId;
+                }
             }
 
             // Delete everything we are able to
-            if ($deleteIds) {
-                try {
-                    $entities = $model->deleteEntities($deleteIds);
-                    if ($entities) {
-                        $flashes[] = [
-                            'type'    => 'notice',
-                            'msg'     => 'mautic.lead.field.notice.batch_deleted',
-                            'msgVars' => [
-                                '%count%' => count($entities),
-                            ],
-                        ];
+            if (!empty($deleteIds)) {
+                $filteredDeleteIds = $model->filterUsedFieldIds($deleteIds);
+                $usedFieldIds      = array_diff($deleteIds, $filteredDeleteIds);
+                $segments          = [];
+                $usedFieldsNames   = [];
+
+                // Iterating through all used fileds to get segments they are used in
+                foreach ($usedFieldIds as $usedFieldId) {
+                    $fieldEntity = $model->getEntity($usedFieldId);
+                    foreach ($model->getFieldSegments($fieldEntity) as $segment) {
+                        $segments[$segment->getId()] = sprintf('"%s" (%d)', $segment->getName(), $segment->getId());
+                        $usedFieldsNames[]           = sprintf('"%s"', $fieldEntity->getName());
                     }
-                } catch (DeleteEntitiesDependencyException $e) {
-                    $flashes = array_merge($flashes, $this->handleDeleteEntitiesDependencyException($e));
+                }
+
+                if ($filteredDeleteIds !== $deleteIds) {
+                    $flashes[] = [
+                        'type'    => 'error',
+                        'msg'     => 'mautic.core.notice.used.fields',
+                        'msgVars' => [
+                            '%segments%' => implode(', ', $segments),
+                            '%fields%'   => implode(', ', array_unique($usedFieldsNames)),
+                        ],
+                    ];
+                }
+
+                if (count($filteredDeleteIds)) {
+                    $entities = $model->deleteEntities($filteredDeleteIds);
+
+                    $flashes[] = [
+                        'type'    => 'notice',
+                        'msg'     => 'mautic.lead.field.notice.batch_deleted',
+                        'msgVars' => [
+                            '%count%' => count($entities),
+                        ],
+                    ];
                 }
             }
         } // else don't do anything
@@ -524,71 +562,5 @@ class FieldController extends FormController
                 'flashes' => $flashes,
             ])
         );
-    }
-
-    /**
-     * Check if the entity can be deleted and add it to the deleteIds array if it can.
-     * Return an array of flash messages if the entity cannot be deleted.
-     *
-     * @param array<int>                                  $deleteIds
-     * @param array<string, array<string, string>|string> $postActionVars
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function checkEntityForDeletion(int $objectId, array &$deleteIds, array $postActionVars): array
-    {
-        /** @var FieldModel $model */
-        $model     = $this->getModel('lead.field');
-        $entity    = $model->getEntity($objectId);
-        $flashes   = [];
-        if (null === $entity) {
-            $flashes[] = [
-                'type'    => 'error',
-                'msg'     => 'mautic.lead.field.error.notfound',
-                'msgVars' => ['%id%' => $objectId],
-            ];
-        } elseif ($entity->isFixed()) {
-            $flashes[] = $this->accessDenied(true);
-        } elseif ($model->isLocked($entity)) {
-            $flashes[] = $this->isLocked($postActionVars, $entity, 'lead.field', true);
-        } else {
-            $deleteIds[] = $objectId;
-        }
-
-        return $flashes;
-    }
-
-    /**
-     * Handles dependency exceptions when deleting batch entities.
-     *
-     * @param DeleteEntitiesDependencyException $e the exception that was thrown during the delete process
-     *
-     * @return array<int, array<string, mixed>>
-     */
-    private function handleDeleteEntitiesDependencyException(DeleteEntitiesDependencyException $e): array
-    {
-        $flashes                = [];
-        $deletedEntities        = $e->getDeletedEntities();
-        $unableToDeleteEntities = $e->getUnableToDeleteEntities();
-
-        if ($deletedEntities) {
-            $flashes[] = [
-                'type'    => 'notice',
-                'msg'     => 'mautic.lead.field.notice.batch_deleted',
-                'msgVars' => ['%count%' => count($deletedEntities)],
-            ];
-        }
-
-        if ($unableToDeleteEntities) {
-            $flashes[] = [
-                'type'    => 'error',
-                'msg'     => 'mautic.core.notice.used.fields',
-                'msgVars' => [
-                    '%fields%' => implode(', ', array_map(fn ($entity) => $entity->getName().' ('.$entity->getId().')', $unableToDeleteEntities)),
-                ],
-            ];
-        }
-
-        return $flashes;
     }
 }

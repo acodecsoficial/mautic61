@@ -3,14 +3,10 @@
 namespace Mautic\LeadBundle\Event;
 
 use Mautic\CoreBundle\Event\CommonEvent;
-use Mautic\CoreBundle\Event\DependencyErrorEventInterface;
-use Mautic\CoreBundle\Event\DependencyErrorEventTrait;
 use Mautic\LeadBundle\Entity\LeadField;
 
-class LeadFieldEvent extends CommonEvent implements DependencyErrorEventInterface
+class LeadFieldEvent extends CommonEvent
 {
-    use DependencyErrorEventTrait;
-
     /**
      * @param bool $isNew
      */

@@ -39,7 +39,6 @@ class ConfigSubscriber implements EventSubscriberInterface
             $segmentParameters['contact_columns'],
             $segmentParameters['background_import_if_more_rows_than'],
             $segmentParameters['contact_export_in_background'],
-            $segmentParameters['contact_export_limit'],
             $segmentParameters['contact_allow_multiple_companies']
         );
         $event->addForm([

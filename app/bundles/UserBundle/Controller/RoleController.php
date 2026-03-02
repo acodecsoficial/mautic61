@@ -15,22 +15,6 @@ use Symfony\Component\HttpKernel\Exception\PreconditionRequiredHttpException;
 class RoleController extends FormController
 {
     /**
-     * @param int|string|null $objectId
-     *
-     * @return string
-     */
-    protected function getSessionBase($objectId = null)
-    {
-        $base = 'role';
-
-        if (null !== $objectId) {
-            $base .= '.'.$objectId;
-        }
-
-        return $base;
-    }
-
-    /**
      * Generate's default role list view.
      *
      * @param int $page
@@ -87,11 +71,18 @@ class RoleController extends FormController
             ]);
         }
 
+        $roleIds = [];
+
+        foreach ($items as $role) {
+            $roleIds[] = $role->getId();
+        }
+
         $pageHelper->rememberPage($page);
 
         return $this->delegateView([
             'viewParameters'  => [
                 'items'       => $items,
+                'userCounts'  => (!empty($roleIds)) ? $model->getRepository()->getUserCount($roleIds) : [],
                 'searchValue' => $filter,
                 'page'        => $page,
                 'limit'       => $limit,

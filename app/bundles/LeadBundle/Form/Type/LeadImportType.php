@@ -123,7 +123,7 @@ class LeadImportType extends AbstractType
             SubmitType::class,
             [
                 'attr' => [
-                    'class'   => 'btn btn-tertiary',
+                    'class'   => 'btn btn-tertiary btn-sm',
                     'icon'    => 'ri-import-line',
                     'onclick' => "mQuery(this).prop('disabled', true); mQuery('form[name=\'lead_import\']').submit();",
                 ],

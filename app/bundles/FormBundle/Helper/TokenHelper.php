@@ -7,8 +7,6 @@ use Mautic\FormBundle\Model\FormModel;
 
 class TokenHelper
 {
-    public const REGEX = '/{form=(.*?)}/';
-
     public function __construct(
         protected FormModel $formModel,
         protected CorePermissions $security,
@@ -19,7 +17,7 @@ class TokenHelper
     {
         $tokens = [];
 
-        preg_match_all(self::REGEX, $content, $matches);
+        preg_match_all('/{form=(.*?)}/', $content, $matches);
 
         if (count($matches[0])) {
             foreach ($matches[1] as $k => $id) {

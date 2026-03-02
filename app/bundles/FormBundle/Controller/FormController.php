@@ -614,6 +614,16 @@ class FormController extends CommonFormController
                         try {
                             $model->getRepository()->saveEntity($entity);
 
+                            // Ensure actions are compatible with form type
+                            if (!$entity->isStandalone()) {
+                                foreach ($actions as $actionId => $action) {
+                                    if (empty($customComponents['actions'][$action['type']]['allowCampaignForm'])) {
+                                        unset($actions[$actionId]);
+                                        $deletedActions[] = $actionId;
+                                    }
+                                }
+                            }
+
                             if (count($actions)) {
                                 // Now set and persist the actions
                                 $model->setActions($entity, $actions);
@@ -722,10 +732,9 @@ class FormController extends CommonFormController
             // load existing fields into session
             $modifiedFields   = [];
             $existingFields   = $entity->getFields()->toArray();
-            $fieldMap         = [];
             $submitButton     = false;
 
-            foreach ($existingFields as $fieldId => $formField) {
+            foreach ($existingFields as $formField) {
                 // Check to see if the field still exists
 
                 if ('button' == $formField->getType()) {
@@ -741,10 +750,7 @@ class FormController extends CommonFormController
 
                 if (!$id) {
                     // Cloned entity
-                    $id = $field['id'] = $field['sessionId'] = $fieldMap[$fieldId] = 'new'.hash('sha1', uniqid(mt_rand()));
-                    if (isset($field['parent'])) {
-                        $field['parent'] = $fieldMap[$field['parent']];
-                    }
+                    $id = $field['id'] = $field['sessionId'] = 'new'.hash('sha1', uniqid(mt_rand()));
                 }
 
                 unset($field['form']);
@@ -904,7 +910,7 @@ class FormController extends CommonFormController
             }
         }
 
-        return $this->editAction($request, $entity, true);
+        return $this->editAction($request, $entity, true, true);
     }
 
     /**

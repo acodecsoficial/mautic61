@@ -6,12 +6,10 @@ namespace Mautic\CoreBundle\EventListener;
 
 use Doctrine\DBAL\Connection;
 use Mautic\CoreBundle\Doctrine\GeneratedColumn\GeneratedColumn;
-use Mautic\CoreBundle\Doctrine\GeneratedColumn\GeneratedColumnInterface;
 use Mautic\CoreBundle\Doctrine\Provider\GeneratedColumnsProviderInterface;
 use Mautic\CoreBundle\Doctrine\Provider\VersionProviderInterface;
 use Symfony\Component\Console\ConsoleEvents;
 use Symfony\Component\Console\Event\ConsoleTerminateEvent;
-use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Stopwatch\Stopwatch;
 
@@ -48,48 +46,26 @@ class MigrationCommandSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $generatedColumns   = $this->generatedColumnsProvider->getGeneratedColumns();
-        $groupedByTableName = [];
+        $stopwatch        = new Stopwatch();
+        $generatedColumns = $this->generatedColumnsProvider->getGeneratedColumns();
 
         foreach ($generatedColumns as $generatedColumn) {
             if ($this->generatedColumnExistsInSchema($generatedColumn)) {
                 continue;
             }
 
-            $tableName = $generatedColumn->getTableName();
+            $stopwatch->start($generatedColumn->getColumnName(), 'generated columns');
 
-            if (!isset($groupedByTableName[$tableName])) {
-                $groupedByTableName[$tableName] = [];
-            }
+            $output->writeln('');
+            $output->writeln("<info>++</info> adding generated column <comment>{$generatedColumn->getColumnName()}</comment>");
+            $output->writeln("<comment>-></comment> {$generatedColumn->getAlterTableSql()}");
 
-            $groupedByTableName[$tableName][$generatedColumn->getColumnName()] = $generatedColumn;
+            $this->connection->executeStatement($generatedColumn->getAlterTableSql());
+
+            $duration = (string) $stopwatch->stop($generatedColumn->getColumnName());
+            $output->writeln("<info>++</info> generated column added ({$duration})");
+            $output->writeln('');
         }
-
-        foreach ($groupedByTableName as $tableName => $generatedColumns) {
-            $query = "ALTER TABLE {$tableName} ".implode(', '.PHP_EOL, array_map(fn (GeneratedColumnInterface $generatedColumn) => $generatedColumn->getAddColumnSql(), $generatedColumns));
-
-            $this->executeAlterQuery($query, $tableName, 'adding generated columns', $output);
-
-            $query = "ALTER TABLE {$tableName} ".implode(', '.PHP_EOL, array_map(fn (GeneratedColumnInterface $generatedColumn) => $generatedColumn->getAddIndexSql(), $generatedColumns));
-
-            $this->executeAlterQuery($query, $tableName, 'adding indices', $output);
-        }
-    }
-
-    private function executeAlterQuery(string $query, string $tableName, string $comment, OutputInterface $output): void
-    {
-        $stopwatch = new Stopwatch();
-        $stopwatch->start($tableName, 'generated columns');
-
-        $output->writeln('');
-        $output->writeln("<info>++</info> Executing {$comment} for table <comment>{$tableName}</comment>");
-        $output->writeln("<comment>-></comment> {$query}");
-
-        $this->connection->executeStatement($query);
-
-        $duration = (string) $stopwatch->stop($tableName);
-        $output->writeln("<info>++</info> Execution finished ({$duration})");
-        $output->writeln('');
     }
 
     private function generatedColumnExistsInSchema(GeneratedColumn $generatedColumn): bool

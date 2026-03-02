@@ -126,16 +126,6 @@ Mautic.ajaxifyForm = function (formName) {
         e.preventDefault();
         var form = mQuery(this);
 
-        // Sync CKEditor content (including source mode) before AJAX submission
-        if (typeof ckEditors !== 'undefined' && ckEditors.size > 0) {
-            form.find('textarea.editor').each(function() {
-                var editor = ckEditors.get(this);
-                if (editor && typeof editor.updateSourceElement === 'function') {
-                    editor.updateSourceElement();
-                }
-            });
-        }
-
         if (MauticVars.formSubmitInProgress) {
             return false;
         } else {
@@ -206,7 +196,7 @@ Mautic.resetForm = function(form) {
  * @param form
  * @param callback
  */
-Mautic.postForm = function (form, callback, extraData = {}) {
+Mautic.postForm = function (form, callback) {
     form = mQuery(form);
 
     var modalParent = form.closest('.modal');
@@ -221,7 +211,6 @@ Mautic.postForm = function (form, callback, extraData = {}) {
     var showLoading = (!inMain || form.attr('data-hide-loadingbar')) ? false : true;
 
     form.ajaxSubmit({
-        data: extraData,
         showLoadingBar: showLoading,
         success: function (data) {
             form.trigger('submit:success', [action, data, inMain]);
@@ -553,10 +542,6 @@ Mautic.toggleYesNo = function(element) {
         $textEl = $toggle.find('.toggle__text'),
         isYes = $yesInput.is(':checked');
 
-    if ($yesInput.is(':disabled')) {
-        return;
-    }
-
     $noInput.prop('checked', isYes);
     $yesInput.prop('checked', !isYes).trigger('change');
     $switchEl.toggleClass('toggle__switch--checked', !isYes);
@@ -571,7 +556,9 @@ Mautic.updatePublishingToggle = function(element) {
         $toggle = $label.closest('.toggle'),
         $form = $toggle.closest('form'),
         yesId = $label.data('yes-id'),
+        noId = $label.data('no-id'),
         $yesInput = mQuery('#' + yesId),
+        $noInput = mQuery('#' + noId),
         $textEl = $toggle.find('.toggle__text'),
         isYes = $yesInput.is(':checked'),
         yesText = $toggle.data('yes'),
@@ -688,7 +675,7 @@ Mautic.updateFieldOperatorValue = function(field, action, valueOnChange, valueOn
             var valueFieldAttrs = {
                 'class': valueField.attr('class'),
                 'id': valueField.attr('id'),
-                'name': valueField.attr('name').replace(/\[\]$/, ''),
+                'name': valueField.attr('name'),
                 'autocomplete': valueField.attr('autocomplete'),
                 'value': valueField.val()
             };
@@ -704,8 +691,7 @@ Mautic.updateFieldOperatorValue = function(field, action, valueOnChange, valueOn
                     .attr('id', valueFieldAttrs['id'])
                     .attr('name', valueFieldAttrs['name'])
                     .attr('autocomplete', valueFieldAttrs['autocomplete'])
-                    .attr('value', valueFieldAttrs['value'])
-                    .removeAttr('multiple');
+                    .attr('value', valueFieldAttrs['value']);
 
                 var multiple = (fieldOperator === 'in' || fieldOperator === '!in');
                 if (multiple) {

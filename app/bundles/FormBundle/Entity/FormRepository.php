@@ -6,15 +6,12 @@ use Doctrine\ORM\Query\Expr\Join;
 use Doctrine\ORM\Tools\Pagination\Paginator;
 use Mautic\CoreBundle\Entity\CommonRepository;
 use Mautic\CoreBundle\Event\GlobalSearchEvent;
-use Mautic\ProjectBundle\Entity\ProjectRepositoryTrait;
 
 /**
  * @extends CommonRepository<Form>
  */
 class FormRepository extends CommonRepository
 {
-    use ProjectRepositoryTrait;
-
     public function getEntities(array $args = [])
     {
         $q = $this->createQueryBuilder('f');
@@ -54,18 +51,13 @@ class FormRepository extends CommonRepository
     }
 
     /**
-     * @param string      $search
-     * @param int         $limit
-     * @param int         $start
-     * @param bool        $viewOther
-     * @param string|null $formType  @deprecated since Mautic 7.1, this parameter is ignored and will be removed in 8.0
+     * @param string $search
+     * @param int    $limit
+     * @param int    $start
+     * @param bool   $viewOther
      */
     public function getFormList($search = '', $limit = 10, $start = 0, $viewOther = false, $formType = null): array
     {
-        if (null !== $formType) {
-            trigger_deprecation('mautic/mautic', '7.1', 'The $formType parameter in FormRepository::getFormList() is deprecated and will be removed in 8.0.');
-        }
-
         $q = $this->createQueryBuilder('f');
         $q->select('partial f.{id, name, alias}');
 
@@ -156,16 +148,6 @@ class FormRepository extends CommonRepository
                 $expr            = $q->expr()->like('f.name', ':'.$unique);
                 $returnParameter = true;
                 break;
-            case $this->translator->trans('mautic.project.searchcommand.name'):
-            case $this->translator->trans('mautic.project.searchcommand.name', [], null, 'en_US'):
-                return $this->handleProjectFilter(
-                    $this->_em->getConnection()->createQueryBuilder(),
-                    'form_id',
-                    'form_projects_xref',
-                    $this->getTableAlias(),
-                    $filter->string,
-                    $filter->not
-                );
         }
 
         if ($expr && $filter->not) {
@@ -252,7 +234,6 @@ class FormRepository extends CommonRepository
             'mautic.form.form.searchcommand.hasresults',
             'mautic.core.searchcommand.category',
             'mautic.core.searchcommand.name',
-            'mautic.project.searchcommand.name',
         ];
 
         return array_merge($commands, parent::getSearchCommands());

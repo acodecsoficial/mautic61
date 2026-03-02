@@ -77,18 +77,6 @@ class ConfigThemeType extends AbstractType
             ]
         );
 
-        // Rounded corners
-        $builder->add(
-            'rounded_corners',
-            HiddenType::class,
-            [
-                'attr'       => [
-                    'class' => 'form-control',
-                ],
-                'required' => false,
-            ]
-        );
-
         $builder->add(
             $builder->create(
                 'theme_import_allowed_extensions',

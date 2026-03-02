@@ -2,35 +2,64 @@
 
 namespace Mautic\CoreBundle\Entity;
 
-use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
 
-/**
- * @method int|null getId()
- * @method bool     isPublished()
- */
 interface TranslationEntityInterface
 {
-    public function getTranslationParent(): ?TranslationEntityInterface;
-
-    public function setTranslationParent(?TranslationEntityInterface $parent = null): self;
-
-    public function removeTranslationParent(): void;
-
-    public function getTranslationChildren(): ?Collection;
+    /**
+     * @return ?TranslationEntityInterface
+     */
+    public function getTranslationParent();
 
     /**
-     * @return $this
+     * Set entity this is a translation of.
+     *
+     * @return mixed
+     */
+    public function setTranslationParent(TranslationEntityInterface $parent = null);
+
+    /**
+     * Set this entity as a main content (remove translation parent).
+     *
+     * @return mixed
+     */
+    public function removeTranslationParent();
+
+    /**
+     * Get ArrayCollection of translated entities.
+     *
+     * @return ?ArrayCollection
+     */
+    public function getTranslationChildren();
+
+    /**
+     * @return mixed
      */
     public function addTranslationChild(TranslationEntityInterface $child);
 
-    public function removeTranslationChild(TranslationEntityInterface $child): void;
+    /**
+     * @return mixed
+     */
+    public function removeTranslationChild(TranslationEntityInterface $child);
 
     /**
-     * @return array<int, mixed>
+     * Get array with entities for this translation.
+     *
+     * If $onlyChildren, then return just $children; otherwise [$parent, $children]
+     *
+     * @return array
      */
-    public function getTranslations(bool $onlyChildren = false): array;
+    public function getTranslations($onlyChildren = false);
 
-    public function isTranslation(bool $isChild = false): bool;
+    /**
+     * @param bool $isChild True to return if the item is a translation of a parent
+     *
+     * @return bool
+     */
+    public function isTranslation($isChild = false);
 
-    public function getLanguage(): ?string;
+    /**
+     * @return mixed
+     */
+    public function getLanguage();
 }

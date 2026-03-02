@@ -2,9 +2,7 @@
 
 namespace Mautic\WebhookBundle\Entity;
 
-use Doctrine\DBAL\ArrayParameterType;
 use Mautic\CoreBundle\Entity\CommonRepository;
-use Mautic\CoreBundle\Helper\DateTimeHelper;
 
 /**
  * @extends CommonRepository<WebhookQueue>
@@ -32,24 +30,27 @@ class WebhookQueueRepository extends CommonRepository
     }
 
     /**
-     * @param array<int> $idList
+     * Gets a count of the webhook queues filtered by the webhook id.
+     *
+     * @param $id int (for Webhooks)
+     *
+     * @deprecated Use exists() instead
      */
-    public function incrementRetryCount(array $idList): void
+    public function getQueueCountByWebhookId($id): int
     {
-        if (!count($idList)) {
-            return;
+        // if no id was sent (the hook was deleted) then return a count of 0
+        if (!$id) {
+            return 0;
         }
 
         $qb = $this->_em->getConnection()->createQueryBuilder();
-        $qb->update(MAUTIC_TABLE_PREFIX.'webhook_queue')
-            ->where(
-                $qb->expr()->in('id', ':ids')
-            )
-            ->set('retries', 'retries + 1')
-            ->set('date_modified', ':date_modified')
-            ->setParameter('ids', $idList, ArrayParameterType::INTEGER)
-            ->setParameter('date_modified', (new \DateTimeImmutable())->format(DateTimeHelper::FORMAT_DB))
-            ->executeStatement();
+
+        return (int) $qb->select('count(*) as webhook_count')
+            ->from(MAUTIC_TABLE_PREFIX.'webhook_queue', $this->getTableAlias())
+            ->where($this->getTableAlias().'.webhook_id = :id')
+            ->setParameter('id', $id)
+            ->executeQuery()
+            ->fetchOne();
     }
 
     /**

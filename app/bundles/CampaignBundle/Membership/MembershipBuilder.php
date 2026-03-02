@@ -34,7 +34,7 @@ class MembershipBuilder
     /**
      * @param int $runLimit
      */
-    public function build(Campaign $campaign, ContactLimiter $contactLimiter, $runLimit, ?OutputInterface $output = null): int
+    public function build(Campaign $campaign, ContactLimiter $contactLimiter, $runLimit, OutputInterface $output = null): int
     {
         defined('MAUTIC_REBUILDING_CAMPAIGNS') or define('MAUTIC_REBUILDING_CAMPAIGNS', 1);
 
@@ -72,7 +72,8 @@ class MembershipBuilder
         if ($this->output) {
             $countResult = $this->campaignLeadRepository->getCountsForCampaignContactsBySegment(
                 $this->campaign->getId(),
-                $this->contactLimiter
+                $this->contactLimiter,
+                $this->campaign->allowRestart()
             );
 
             $this->output->writeln(

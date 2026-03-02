@@ -1,54 +1,33 @@
-FROM php:8.2-apache-bookworm
+FROM php:8.2-apache
 
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/docroot
-
+# Instala dependências do sistema e bibliotecas necessárias
 RUN apt-get update && apt-get install -y \
-    git \
-    unzip \
-    zip \
+    libicu-dev libpng-dev libjpeg-dev libfreetype6-dev \
+    libzip-dev unzip git curl libonig-dev libxml2-dev \
+    libcurl4-openssl-dev zip libc-client-dev libkrb5-dev \
     cron \
-    default-mysql-client \
-    libicu-dev \
-    libzip-dev \
-    libpng-dev \
-    libjpeg62-turbo-dev \
-    libfreetype6-dev \
-    libonig-dev \
-    libxml2-dev \
-    libcurl4-openssl-dev \
-    libssl-dev \
-    libxslt1-dev \
-    libc-client2007e-dev \
-    libkrb5-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
-    && docker-php-ext-install \
-        pdo \
-        pdo_mysql \
-        mysqli \
-        intl \
-        zip \
-        gd \
-        mbstring \
-        xml \
-        xsl \
-        opcache \
-        imap \
-    && a2enmod rewrite \
-    && sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
-    && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+ && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
+ && docker-php-ext-install intl pdo pdo_mysql zip gd mbstring xml curl \
+      imap bcmath sockets \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Define ServerName para evitar o aviso do Apache
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+RUN a2enmod rewrite
 
 WORKDIR /var/www/html
-COPY . /var/www/html
 
-RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --prefer-dist --no-dev --optimize-autoloader --no-interaction
+COPY . .
 
 RUN chown -R www-data:www-data /var/www/html \
-    && mkdir -p /var/www/html/var /var/www/html/docroot/media \
-    && chmod -R 775 /var/www/html/var /var/www/html/docroot/media
+ && chmod -R 755 /var/www/html
 
 EXPOSE 80
+
+# Instala o Composer e executa a instalação das dependências
+RUN curl -sS https://getcomposer.org/installer | php -- \
+    --install-dir=/usr/local/bin --filename=composer \
+ && composer install --no-dev --optimize-autoloader
+
+CMD ["apache2-foreground"]

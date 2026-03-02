@@ -45,9 +45,7 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 COPY . /var/www/html
 
-RUN rm -f composer.lock \
-    && composer clear-cache \
-    && COMPOSER_ALLOW_SUPERUSER=1 composer update --prefer-dist --no-dev --optimize-autoloader --no-interaction
+RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --prefer-dist --no-dev --optimize-autoloader --no-interaction
 
 RUN chown -R www-data:www-data /var/www/html \
     && mkdir -p /var/www/html/var /var/www/html/docroot/media \

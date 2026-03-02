@@ -1,6 +1,6 @@
 FROM php:8.2-apache-bookworm
 
-ENV APACHE_DOCUMENT_ROOT=/var/www/html/docroot
+ENV APACHE_DOCUMENT_ROOT=/var/www/html
 
 RUN apt-get update && apt-get install -y \
     git \
@@ -42,7 +42,9 @@ RUN apt-get update && apt-get install -y \
     && a2enmod rewrite \
     && sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
     && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf \
-    && printf '<Directory /var/www/html/docroot>\n\
+    && printf 'ServerName localhost\n' > /etc/apache2/conf-available/servername.conf \
+    && a2enconf servername \
+    && printf '<Directory /var/www/html>\n\
 AllowOverride All\n\
 Require all granted\n\
 Options FollowSymLinks\n\
@@ -61,9 +63,9 @@ RUN chmod +x /var/www/html/bin/console \
     && COMPOSER_ALLOW_SUPERUSER=1 composer install --prefer-dist --no-dev --optimize-autoloader --no-interaction --no-scripts
 
 RUN chown -R www-data:www-data /var/www/html \
-    && mkdir -p /var/www/html/var /var/www/html/docroot/media \
+    && mkdir -p /var/www/html/var /var/www/html/media \
     && find /var/www/html -type d -exec chmod 755 {} \; \
     && find /var/www/html -type f -exec chmod 644 {} \; \
-    && chmod -R 775 /var/www/html/var /var/www/html/docroot/media
+    && chmod -R 775 /var/www/html/var /var/www/html/media
 
 EXPOSE 80

@@ -21,6 +21,7 @@
     "source": "https://github.com/mautic/mautic"
   },
   "require": {
+    "api-platform/core": "^2.7",
     "composer/installers": "^1.11",
     "mautic/core-lib": "^6.0"
   },

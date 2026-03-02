@@ -1,42 +1,43 @@
 {
-    "name": "gaufrette/extras",
-    "description": "Provides extra features (prefixed fs, resolvable fs) to Gaufrette",
-    "type": "library",
-    "require": {
-        "knplabs/gaufrette": "~0.4"
+  "name": "gaufrette/extras",
+  "version": "0.1.0",
+  "description": "Provides extra features (prefixed fs, resolvable fs) to Gaufrette",
+  "type": "library",
+  "require": {
+    "knplabs/gaufrette": "~0.4"
+  },
+  "require-dev": {
+    "phpspec/phpspec": "^3.4",
+    "phpunit/phpunit": "~5.5",
+    "aws/aws-sdk-php": "~2.4|~3"
+  },
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Albin Kerouanton",
+      "email": "albin.kerouanton@knplabs.com"
     },
-    "require-dev": {
-        "phpspec/phpspec": "^3.4",
-        "phpunit/phpunit": "~5.5",
-        "aws/aws-sdk-php": "~2.4|~3"
+    {
+      "name": "KnpLabs Team",
+      "homepage": "http://knplabs.com"
     },
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Albin Kerouanton",
-            "email": "albin.kerouanton@knplabs.com"
-        },
-        {
-            "name": "KnpLabs Team",
-            "homepage": "http://knplabs.com"
-        },
-        {
-            "name":     "The contributors",
-            "homepage": "http://github.com/Gaufrette/extras/contributors"
-        }
-    ],
-    "minimum-stability": "stable",
-    "config": {
-        "bin-dir": "bin/"
-    },
-    "autoload": {
-        "psr-4": {
-            "Gaufrette\\Extras\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Gaufrette\\Extras\\Tests\\": "tests/"
-        }
+    {
+      "name": "The contributors",
+      "homepage": "http://github.com/Gaufrette/extras/contributors"
     }
+  ],
+  "minimum-stability": "stable",
+  "config": {
+    "bin-dir": "bin/"
+  },
+  "autoload": {
+    "psr-4": {
+      "Gaufrette\\Extras\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Gaufrette\\Extras\\Tests\\": "tests/"
+    }
+  }
 }

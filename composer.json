@@ -22,7 +22,7 @@
   },
   "require": {
     "composer/installers": "^1.11",
-    "gaufrette/extras": "*",
+    "gaufrette/extras": "0.1.0",
     "knplabs/gaufrette": "*",
     "mautic/core-lib": "^6.0"
   },

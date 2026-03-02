@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y \
     zip \
     curl \
     cron \
+    nodejs \
+    npm \
     default-mysql-client \
     libicu-dev \
     libpng-dev \

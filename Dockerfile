@@ -40,11 +40,21 @@ RUN apt-get update && apt-get install -y \
     && a2enmod rewrite \
     && sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
     && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf \
+    && printf '<Directory /var/www/html/docroot>\n\
+AllowOverride All\n\
+Require all granted\n\
+Options FollowSymLinks\n\
+</Directory>\n' > /etc/apache2/conf-available/mautic.conf \
+    && a2enconf mautic \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
 WORKDIR /var/www/html
 COPY . /var/www/html
+
+RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --prefer-dist --no-dev --optimize-autoloader --no-interaction
 
 RUN chown -R www-data:www-data /var/www/html \
     && mkdir -p /var/www/html/var /var/www/html/docroot/media \

@@ -6,7 +6,11 @@ x-mautic-base: &mautic-base
   restart: unless-stopped
   environment:
     TZ: America/Bahia
-    APP_ENV: prod
+    APP_ENV: ${APP_ENV:-prod}
+    APP_DEBUG: "${APP_DEBUG:-0}"
+  configs:
+    - source: mautic_dotenv
+      target: /var/www/html/.env
   volumes:
     - mautic_config:/var/www/html/app/config
     - mautic_media:/var/www/html/media
@@ -46,6 +50,12 @@ services:
   cron:
     <<: *mautic-base
     command: ["cron", "-f"]
+
+configs:
+  mautic_dotenv:
+    content: |
+      APP_ENV=${APP_ENV:-prod}
+      APP_DEBUG=${APP_DEBUG:-0}
 
 volumes:
   mautic_db:

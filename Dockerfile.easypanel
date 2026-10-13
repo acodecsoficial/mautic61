@@ -1,0 +1,44 @@
+FROM php:8.2-apache-bookworm
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    COMPOSER_ALLOW_SUPERUSER=1 \
+    COMPOSER_MEMORY_LIMIT=-1 \
+    TZ=America/Bahia
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git unzip zip curl cron nodejs npm default-mysql-client \
+    libicu-dev libpng-dev libjpeg62-turbo-dev libfreetype6-dev \
+    libzip-dev libonig-dev libxml2-dev libcurl4-openssl-dev \
+    libssl-dev libxslt1-dev libc-client2007e-dev libkrb5-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
+    && docker-php-ext-install -j2 intl pdo_mysql mysqli zip gd mbstring xml imap bcmath sockets xsl opcache curl \
+    && a2enmod rewrite headers expires \
+    && printf '<Directory /var/www/html>\nAllowOverride All\nRequire all granted\nOptions FollowSymLinks\nDirectoryIndex index.php index.html\n</Directory>\n' > /etc/apache2/conf-available/mautic.conf \
+    && a2enconf mautic \
+    && printf 'memory_limit=512M\nupload_max_filesize=64M\npost_max_size=64M\nmax_execution_time=300\ndate.timezone=America/Bahia\n' > /usr/local/etc/php/conf.d/zz-mautic.ini \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+COPY --from=composer:2 /usr/bin/composer /usr/local/bin/composer
+
+WORKDIR /var/www/html
+COPY . /var/www/html
+
+RUN composer install --no-interaction --prefer-dist --no-progress --no-dev --no-scripts --optimize-autoloader
+RUN npm ci --ignore-scripts --no-audit --no-fund \
+    && npx patch-package \
+    && npm run build
+
+COPY mautic-cron /etc/cron.d/mautic
+
+RUN mkdir -p /var/www/html/var/logs /var/www/html/media/assets \
+    /var/www/html/media/files /var/www/html/media/images \
+    /var/www/html/config /var/www/html/plugins /var/www/html/themes \
+    && chmod 0644 /etc/cron.d/mautic \
+    && chown -R www-data:www-data /var/www/html \
+    && chmod -R u+rwX,g+rwX /var/www/html/var /var/www/html/media \
+        /var/www/html/config /var/www/html/app/config \
+        /var/www/html/plugins /var/www/html/themes
+
+EXPOSE 80
+CMD ["apache2-foreground"]

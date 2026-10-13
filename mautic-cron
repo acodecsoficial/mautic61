@@ -1,0 +1,6 @@
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+0,15,30,45 * * * * www-data [ -f /var/www/html/app/config/local.php ] && cd /var/www/html && php bin/console mautic:segments:update --no-interaction >> /var/www/html/var/logs/cron.log 2>&1
+5,20,35,50 * * * * www-data [ -f /var/www/html/app/config/local.php ] && cd /var/www/html && php bin/console mautic:campaigns:update --no-interaction >> /var/www/html/var/logs/cron.log 2>&1
+10,25,40,55 * * * * www-data [ -f /var/www/html/app/config/local.php ] && cd /var/www/html && php bin/console mautic:campaigns:trigger --no-interaction >> /var/www/html/var/logs/cron.log 2>&1
+12,27,42,57 * * * * www-data [ -f /var/www/html/app/config/local.php ] && cd /var/www/html && php bin/console mautic:messages:send --no-interaction >> /var/www/html/var/logs/cron.log 2>&1

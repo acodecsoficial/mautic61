@@ -1,0 +1,56 @@
+x-mautic-base: &mautic-base
+  build:
+    context: .
+    dockerfile: Dockerfile.easypanel
+  image: acodecs-mautic61:local
+  restart: unless-stopped
+  environment:
+    TZ: America/Bahia
+    APP_ENV: prod
+  volumes:
+    - mautic_config:/var/www/html/app/config
+    - mautic_media:/var/www/html/media
+    - mautic_plugins:/var/www/html/plugins
+    - mautic_themes:/var/www/html/themes
+    - mautic_var:/var/www/html/var
+  depends_on:
+    db:
+      condition: service_healthy
+
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --max-allowed-packet=64M
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Defina_MYSQL_ROOT_PASSWORD_no_EasyPanel}
+      MYSQL_DATABASE: mautic
+      MYSQL_USER: mautic
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Defina_MYSQL_PASSWORD_no_EasyPanel}
+      TZ: America/Bahia
+    volumes:
+      - mautic_db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  mautic:
+    <<: *mautic-base
+
+  cron:
+    <<: *mautic-base
+    command: ["cron", "-f"]
+
+volumes:
+  mautic_db:
+  mautic_config:
+  mautic_media:
+  mautic_plugins:
+  mautic_themes:
+  mautic_var:

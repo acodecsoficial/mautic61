@@ -1,0 +1,15 @@
+.git
+.github
+.ddev
+.env
+.env.*
+!/.env.example
+node_modules
+vendor
+var/cache
+var/logs
+var/tmp
+app/config/local.php
+app/config/local*.php
+app/config/paths_local.php
+app/config/config_local.php
